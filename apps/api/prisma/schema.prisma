@@ -1,0 +1,21 @@
+// Further models are added incrementally per PLAN.md phases
+// (Project/ActivityLog in Phase 3, Estimate/EstimateItem in Phase 4,
+// FeatureKnowledge + pgvector in Phase 6).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
