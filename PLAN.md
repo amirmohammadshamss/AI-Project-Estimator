@@ -76,8 +76,13 @@ Guiding constraints carried through every phase (see doc.md §39, §42):
 - Phase 7 verification: unit tests cover ownership filters, latest-version
   aggregation, exact decimal sums, empty states, cache isolation/races/outages,
   mutation invalidation, and overview links. Browser tests use mocked API data
-  to check mobile/tablet/desktop layouts and error recovery. Live database-backed
-  dashboard acceptance remains pending.
+  to check mobile/tablet/desktop layouts and error recovery. All 98 unit/component
+  tests and four Chrome browser tests pass; screenshots were visually inspected.
+  Type checking, lint (four existing warnings), and both builds pass.
+  API production builds disable incremental caching so repeated clean builds
+  retain all runtime modules; runtime imports pass after consecutive builds.
+  The optional pgvector database test remains skipped, and live database-backed dashboard
+  acceptance remains pending.
 - Next implementation phase: Phase 8 (explanation/risk panels and PDF export).
 
 ## 0. Repository & Tooling Baseline
