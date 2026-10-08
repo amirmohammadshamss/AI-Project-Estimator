@@ -48,3 +48,9 @@ export const EstimateExplanationSchema = z
 export const DetectedRisksSchema = z
   .object({ risks: z.array(EstimateRiskSchema).max(100) })
   .strict();
+
+export const EstimateExplanationInputSchema = EstimateResultSchema.extend({
+  summary: z.string().min(1).regex(/\S/).max(10000),
+  suggestedStack: z.array(z.string().min(1).max(200)).max(50),
+});
+export type EstimateExplanationInput = z.infer<typeof EstimateExplanationInputSchema>;

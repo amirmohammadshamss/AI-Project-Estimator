@@ -59,7 +59,7 @@ export class EstimatesService {
 
   async create(userId: string, projectId: string, dto: CreateEstimateDto) {
     const saved = await this.prisma.$transaction(async (tx) => {
-      await this.project(tx, userId, projectId);
+      const project = await this.project(tx, userId, projectId);
       return this.persist(
         tx,
         userId,
@@ -69,6 +69,7 @@ export class EstimatesService {
         [],
         [],
         'ESTIMATE_GENERATED',
+        { projectName: project.name, projectDescription: project.description },
       );
     });
     await this.dashboardCache.invalidate(userId);
@@ -115,6 +116,7 @@ export class EstimatesService {
         result.suggestedStack,
         result.risks,
         'ESTIMATE_GENERATED',
+        { projectName: current.name, projectDescription: current.description },
       );
     });
     await this.dashboardCache.invalidate(userId);
@@ -155,6 +157,7 @@ export class EstimatesService {
         source.suggestedStack,
         source.risks as Prisma.InputJsonValue,
         'ESTIMATE_UPDATED',
+        { projectName: source.projectName, projectDescription: source.projectDescription },
       );
     });
     await this.dashboardCache.invalidate(userId);
@@ -170,6 +173,7 @@ export class EstimatesService {
     suggestedStack: string[],
     risks: Prisma.InputJsonValue,
     action: string,
+    snapshot: { projectName: string; projectDescription: string },
   ) {
     const latest = await tx.estimate.findFirst({
       where: { projectId },
@@ -181,6 +185,7 @@ export class EstimatesService {
     );
     const estimate = await tx.estimate.create({
       data: {
+        ...snapshot,
         projectId,
         version: (latest?.version ?? 0) + 1,
         summary: dto.summary,

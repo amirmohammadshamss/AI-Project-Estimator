@@ -16,7 +16,7 @@ Guiding constraints carried through every phase (see doc.md §39, §42):
 
 ---
 
-## Progress — 2026-10-08
+## Progress — 2026-10-09
 
 - Phases 1–2: existing setup and authentication implementation.
 - Phase 3: project CRUD/archive, activity feed, forms, and ownership unit tests
@@ -83,7 +83,24 @@ Guiding constraints carried through every phase (see doc.md §39, §42):
   retain all runtime modules; runtime imports pass after consecutive builds.
   The optional pgvector database test remains skipped, and live database-backed dashboard
   acceptance remains pending.
-- Next implementation phase: Phase 8 (explanation/risk panels and PDF export).
+- Phase 8: implemented ownership-scoped explanation/risk-analysis endpoints and
+  client-facing panels with stored technology recommendations and severity badges.
+  On-demand explanations and additional risk analysis leave saved versions intact;
+  PDFs include the saved risks/recommendations, not the temporary extra analysis.
+  POST /estimates/:id/export renders a paginated PDF with every §19 field and logs
+  ESTIMATE_EXPORTED only after successful rendering and an ownership recheck.
+  Exports work independently of OpenAI configuration. The frontend downloads the
+  PDF with pending/error states and refreshes the project activity cache.
+  Estimate versions now preserve project-name/description snapshots; hour edits
+  retain the source snapshot. The migration backfills older estimates using the
+  project text available at migration time (earlier historical text is unavailable).
+- Phase 8 verification: all 113 unit/component tests and six mocked-API Chrome
+  checks pass. PDF text extraction verifies required fields and long-text
+  pagination; generated sample pages were rendered and visually inspected.
+  Type checking, schema validation, lint (four existing warnings), and builds pass.
+  Live migration, database-backed export/activity, and real OpenAI acceptance
+  remain pending; the opt-in pgvector database test remains skipped.
+- Next implementation phase: Phase 9 (test hardening and full acceptance flow).
 
 ## 0. Repository & Tooling Baseline
 
@@ -344,7 +361,7 @@ done," independent of which phase it landed in:
 - [x] RAG context demonstrably influences generated estimates
 - [ ] Dashboard stats + charts, responsive
 - [ ] Risk detection + explanation + stack recommendations from real AI output
-- [ ] PDF export contains all required fields
+- [x] PDF export contains all required fields
 - [ ] Redis used only for stats cache / search cache / rate limiting — no filler usage
 - [ ] Background-job abstraction exists or is cleanly deferrable (§25)
 - [ ] Jest (unit+integration) + Playwright E2E, AI mocked, no API key needed in CI

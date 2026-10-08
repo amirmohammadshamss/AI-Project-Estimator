@@ -1,4 +1,5 @@
 'use client';
+import { EstimateInsights } from '../../../../../components/estimate-insights';
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -17,7 +18,10 @@ export default function EstimatePage() {
   const versions = useEstimates(id);
   const project = useProject(id);
   const edit = useEditHours(id, estimateId);
-  const editable = project.data?.status !== 'ARCHIVED' && versions.data?.[0]?.id === estimateId;
+  const editable =
+    Boolean(project.data) &&
+    project.data?.status !== 'ARCHIVED' &&
+    versions.data?.[0]?.id === estimateId;
   if (estimate.isLoading) return <main className="p-8">Loading estimate…</main>;
   if (!estimate.data || estimate.isError)
     return (
@@ -33,6 +37,9 @@ export default function EstimatePage() {
         ← Back to project
       </Link>
       <h1 className="text-2xl font-semibold">Estimate · Version {data.version}</h1>
+      <p className="font-medium">{data.projectName}</p>
+      <p className="whitespace-pre-wrap text-sm text-slate-600">{data.projectDescription}</p>
+      <h2 className="text-lg font-semibold">Executive summary</h2>
       <p className="whitespace-pre-wrap">{data.summary}</p>
       <dl className="grid grid-cols-2 gap-4 rounded border bg-white p-4 sm:grid-cols-4">
         {[
@@ -105,6 +112,7 @@ export default function EstimatePage() {
           </tbody>
         </table>
       </div>
+      <EstimateInsights key={estimateId} projectId={id} estimate={data} />
     </main>
   );
 }

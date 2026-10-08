@@ -17,6 +17,11 @@ export interface Estimate {
   id: string;
   version: number;
   summary: string;
+  projectName: string;
+  projectDescription: string;
+  createdAt: string;
+  suggestedStack: string[];
+  risks: import('@ape/types').EstimateRisk[];
   hourlyRate: string;
   currency: string;
   totalHours: string;
@@ -86,6 +91,35 @@ export function useGenerateEstimate(projectId: string) {
       client.invalidateQueries({ queryKey: ['estimates', projectId] });
       client.invalidateQueries({ queryKey: ['projects'] });
       client.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+}
+
+export function useExplainEstimate(id: string) {
+  return useMutation({
+    mutationFn: () => apiClient.post<{ explanation: string }>(`/estimates/${id}/explain`),
+  });
+}
+export function useAnalyzeRisks(id: string) {
+  return useMutation({
+    mutationFn: () =>
+      apiClient.post<{ risks: import('@ape/types').EstimateRisk[] }>(`/estimates/${id}/risks`),
+  });
+}
+export function useExportEstimate(projectId: string, id: string, version: number) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient.postPdf(`/estimates/${id}/export`),
+    onSuccess: (blob) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `estimate-v${version}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      client.invalidateQueries({ queryKey: ['projects', projectId, 'activity'] });
     },
   });
 }

@@ -12,10 +12,10 @@ export class AiProviderError extends Error {
   }
 }
 export class AiGenerationError extends ServiceUnavailableException {
-  constructor() {
+  constructor(message = 'Could not generate an estimate. Please try again later.') {
     super({
       code: 'AI_GENERATION_FAILED',
-      message: 'Could not generate an estimate. Please try again later.',
+      message,
     });
   }
 }

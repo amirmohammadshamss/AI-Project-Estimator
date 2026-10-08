@@ -119,3 +119,32 @@ To use an existing Chrome installation instead of downloading Chromium, set
 `PLAYWRIGHT_CHANNEL=chrome` when running `pnpm test:e2e`. These tests verify three
 viewport sizes and retry behavior; the full application acceptance journey is
 still scheduled for Phase 9.
+
+## Estimate insights and PDF reports
+
+Apply the project-snapshot migration before running this version of the API.
+New estimates save the project name and description, and hour edits retain those
+snapshots. Legacy estimates are backfilled with current project text at migration
+time; their earlier project text cannot be reconstructed.
+
+The estimate page shows saved technology recommendations and risks. **Explain
+estimate** requests concise reasoning through AiService. **Analyze risks** uses
+that version's saved project description and shows additional analysis separately.
+These on-demand results do not mutate the estimate and are not added to its PDF.
+They require backend OpenAI configuration, while PDF export does not.
+
+- `POST /estimates/:id/explain`: `{ explanation }`.
+- `POST /estimates/:id/risks`: `{ risks: [{ title, description, severity }] }`.
+- `POST /estimates/:id/export`: downloadable `application/pdf`, with no-store headers.
+
+All three routes enforce estimate ownership, including archived versions. Reports
+include the user's name (email fallback), project snapshot, executive summary,
+hours/rate/cost, feature category/complexity/hours/cost/confidence and manual-edit
+markers, recommendations, saved risks, overall confidence, generated date and
+page numbers. PDFKit wraps long text onto new pages, with embedded Noto Sans
+Latin fonts. Font fallback for other scripts remains future work.
+
+An `ESTIMATE_EXPORTED` activity is written only after rendering succeeds and
+ownership is rechecked. Failed rendering produces a sanitized `PDF_EXPORT_FAILED`
+error. The PDF tests extract the report text and check pagination; browser tests
+check the insights controls and download behavior using mocked API responses.

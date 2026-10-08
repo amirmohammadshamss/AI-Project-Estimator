@@ -1,3 +1,6 @@
+import { EstimateReportsController } from './estimate-reports.controller';
+import { EstimateReportsService } from './estimate-reports.service';
+import { EstimatePdfService } from './estimate-pdf.service';
 import { DashboardCacheModule } from '../dashboard/dashboard-cache.module';
 import { Module } from '@nestjs/common';
 import { SearchModule } from '../search/search.module';
@@ -8,7 +11,7 @@ import { CostCalculationService } from './cost-calculation.service';
 
 @Module({
   imports: [DashboardCacheModule, AiModule, SearchModule],
-  controllers: [EstimatesController],
-  providers: [EstimatesService, CostCalculationService],
+  controllers: [EstimatesController, EstimateReportsController],
+  providers: [EstimatesService, CostCalculationService, EstimateReportsService, EstimatePdfService],
 })
 export class EstimatesModule {}

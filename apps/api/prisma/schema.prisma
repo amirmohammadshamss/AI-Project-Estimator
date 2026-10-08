@@ -53,20 +53,22 @@ model ActivityLog {
 }
 
 model Estimate {
-  id             String         @id @default(uuid())
-  projectId      String
-  project        Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  version        Int
-  summary        String
-  hourlyRate     Decimal        @db.Decimal(12, 2)
-  currency       String         @default("USD")
-  totalHours     Decimal        @db.Decimal(14, 2)
-  totalCost      Decimal        @db.Decimal(20, 2)
-  confidence     Float
-  suggestedStack String[]
-  risks          Json
-  createdAt      DateTime       @default(now())
-  items          EstimateItem[]
+  id                 String         @id @default(uuid())
+  projectId          String
+  project            Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  version            Int
+  projectName        String
+  projectDescription String
+  summary            String
+  hourlyRate         Decimal        @db.Decimal(12, 2)
+  currency           String         @default("USD")
+  totalHours         Decimal        @db.Decimal(14, 2)
+  totalCost          Decimal        @db.Decimal(20, 2)
+  confidence         Float
+  suggestedStack     String[]
+  risks              Json
+  createdAt          DateTime       @default(now())
+  items              EstimateItem[]
 
   @@unique([projectId, version])
 }

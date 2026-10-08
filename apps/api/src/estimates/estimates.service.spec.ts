@@ -47,6 +47,7 @@ describe('EstimatesService', () => {
     search.contextFor.mockResolvedValue(['Authentication']);
     tx.project.findFirst.mockResolvedValue({
       id: 'project',
+      name: 'Portal snapshot',
       status: 'DRAFT',
       description: 'Build a portal',
     });
@@ -67,6 +68,7 @@ describe('EstimatesService', () => {
     expect(result.version).toBe(3);
     expect(dashboardCache.invalidate).toHaveBeenCalledWith('owner');
     expect(result.totalCost.toString()).toBe('750');
+    expect(result.projectName).toBe('Portal snapshot');
     expect(result.suggestedStack).toEqual(['NestJS']);
     expect(result.risks).toEqual(aiResult.risks);
     expect(tx.estimate.create.mock.calls[0][0].data.items.create[0].manuallyModified).toBe(false);
@@ -159,6 +161,8 @@ describe('EstimatesService', () => {
   });
   const source = {
     id: 'old',
+    projectName: 'Original project name',
+    projectDescription: 'Original project description',
     version: 1,
     summary: dto.summary,
     hourlyRate: new Prisma.Decimal(50),
@@ -178,6 +182,8 @@ describe('EstimatesService', () => {
     tx.estimate.findFirst.mockResolvedValue(source);
     const result = await service.editHours('owner', 'project', 'old', 'item', 12);
     expect(result.version).toBe(2);
+    expect(result.projectName).toBe('Original project name');
+    expect(result.projectDescription).toBe('Original project description');
     expect(dashboardCache.invalidate).toHaveBeenCalledWith('owner');
     expect(result.totalCost.toString()).toBe('600');
     expect(tx.estimate.create.mock.calls[0][0].data.items.create[0].manuallyModified).toBe(true);
