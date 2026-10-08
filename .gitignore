@@ -13,3 +13,5 @@ coverage/
 /apps/api/generated/
 test-results/
 playwright-report/
+
+*.tsbuildinfo

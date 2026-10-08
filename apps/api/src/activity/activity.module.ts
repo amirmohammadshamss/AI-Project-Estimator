@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
+import { ActivityService } from './activity.service';
 
-/**
- * Placeholder module — implemented in a later phase (see PLAN.md).
- */
-@Module({})
+@Module({
+  providers: [ActivityService],
+  exports: [ActivityService],
+})
 export class ActivityModule {}

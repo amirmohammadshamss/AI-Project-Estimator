@@ -3,7 +3,7 @@ RUN corepack enable
 WORKDIR /repo
 
 FROM base AS deps
-COPY pnpm-workspace.yaml package.json ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/api/package.json apps/api/package.json
 COPY packages/types/package.json packages/types/package.json
 COPY packages/shared/package.json packages/shared/package.json

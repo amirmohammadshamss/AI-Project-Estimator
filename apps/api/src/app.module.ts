@@ -1,3 +1,4 @@
+import { DashboardModule } from './dashboard/dashboard.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -32,6 +33,7 @@ import { ActivityModule } from './activity/activity.module';
     EmbeddingsModule,
     SearchModule,
     ActivityModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}

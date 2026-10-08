@@ -12,7 +12,12 @@
     "test:watch": "jest --watch",
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "prebuild": "pnpm --filter @ape/types build",
+    "pretest": "pnpm --filter @ape/types build",
+    "pretypecheck": "pnpm --filter @ape/types build",
+    "predev": "pnpm --filter @ape/types build",
+    "preprisma:seed": "pnpm --filter @ape/types build"
   },
   "dependencies": {
     "@ape/types": "workspace:*",
@@ -31,6 +36,7 @@
     "class-validator": "^0.14.1",
     "cookie-parser": "^1.4.7",
     "ioredis": "^5.4.1",
+    "openai": "^7.30.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",

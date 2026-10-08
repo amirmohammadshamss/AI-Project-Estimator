@@ -1,7 +1,5 @@
 import { Module } from '@nestjs/common';
-
-/**
- * Placeholder module — implemented in a later phase (see PLAN.md).
- */
-@Module({})
+import { AiModule } from '../ai/ai.module';
+import { EmbeddingsService } from './embeddings.service';
+@Module({ imports: [AiModule], providers: [EmbeddingsService], exports: [EmbeddingsService] })
 export class EmbeddingsModule {}

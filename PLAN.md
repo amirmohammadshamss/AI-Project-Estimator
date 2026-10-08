@@ -16,6 +16,70 @@ Guiding constraints carried through every phase (see doc.md §39, §42):
 
 ---
 
+## Progress — 2026-10-08
+
+- Phases 1–2: existing setup and authentication implementation.
+- Phase 3: project CRUD/archive, activity feed, forms, and ownership unit tests
+  are implemented. Full browser/database acceptance remains to be verified.
+- Phase 4: implemented Estimate/EstimateItem migration, validated manual creation,
+  ownership-scoped list/detail endpoints, decimal cost calculation, project-scoped
+  version allocation, and frontend creation/history/detail pages with inline hour
+  editing and manual-edit badges. Creation, status changes, and activity logs are
+  transactional. Hour edits copy the latest estimate to a new version; older
+  versions remain immutable. Archived projects reject new estimates/edits.
+- Phase 4 verification: unit tests cover cost arithmetic, input validation,
+  ownership, version increments, manual flags, and stale-version rejection.
+  Frontend tests cover history links, archived state, and manual form validation.
+- Remaining before Phase 4 acceptance: apply migrations to a running PostgreSQL
+  instance and exercise create → view → edit → history in the browser, including
+  concurrent version creation. PostgreSQL was unavailable at localhost:5432.
+- Phase 5: implemented AiService with injectable AiProvider/OpenAI SDK adapter,
+  shared strict Zod output validation, configurable model/timeout, and generated
+  estimates persisted with backend-calculated costs, risks, and stack suggestions.
+  `POST /projects/:id/estimates` now generates from the saved description;
+  manual creation remains at `POST /projects/:id/estimates/manual`.
+  AI requests run outside transactions; ownership/archive/description are rechecked
+  before saving. Invalid output, missing configuration, refusals, timeout, and
+  provider failures produce a sanitized `AI_GENERATION_FAILED` response.
+  The UI provides rate/currency inputs, a pending state, accessible failure feedback,
+  and navigation to the generated version. Embedding/explanation/risk methods are
+  implemented behind the same abstraction for later phases.
+- Phase 5 verification: mocked-provider/SDK tests cover schema rejection, generated
+  versioning/costs, preservation of risks/stack, ownership checks, project changes,
+  provider failures, and frontend generation states; all 74 tests pass without live
+  API calls. Type checking, lint (four existing auth-test warnings), and both app
+  builds pass. No API key is needed for tests.
+  Live OpenAI generation and database/browser acceptance remain unverified.
+- Phase 6: implemented FeatureKnowledge with a pgvector migration, validated
+  1536-dimensional embeddings, model-scoped exact cosine search, five-minute
+  Redis retrieval caching, and description → embedding → retrieval → AI context
+  generation. Redis outages fall back to fresh search; embedding/database errors
+  are handled as safe generation failures. The idempotent seed embeds the 14
+  reference features and atomically upserts by feature name/embedding model.
+- Phase 6 verification: tests cover vector validation, parameterized cosine SQL,
+  cache normalization/model separation/TTL/outage behavior, seed atomicity, and
+  a full service pipeline with mocked AiProvider proving retrieved feature names
+  reach the prompt and change the resulting hours/costs. A real pgvector nearest
+  neighbor test is opt-in via VECTOR_TEST_DATABASE_URL; it remains unrun here.
+  Verification: 89 tests pass; the real-database test is skipped. Type checking,
+  Prisma schema validation, lint (four existing warnings), and app builds pass.
+  Live migrations, embedding seeding, and browser acceptance remain pending.
+- Phase 7: implemented authenticated GET /dashboard/stats with owner-scoped
+  Prisma aggregations and a repeatable-read snapshot. Each project contributes
+  only its latest estimate (including archived projects); costs stay separated
+  by currency and are grouped by estimate creation month in UTC. The dashboard
+  includes five KPIs, responsive hours/status/cost charts, accessible text data,
+  recent project/version links, and loading/empty/error/retry states.
+  A 60-second per-user Redis cache uses revision keys; every project/estimate
+  mutation invalidates it after persistence, and frontend mutations invalidate
+  dashboard queries. Old in-flight readers cannot refill the new cache revision.
+- Phase 7 verification: unit tests cover ownership filters, latest-version
+  aggregation, exact decimal sums, empty states, cache isolation/races/outages,
+  mutation invalidation, and overview links. Browser tests use mocked API data
+  to check mobile/tablet/desktop layouts and error recovery. Live database-backed
+  dashboard acceptance remains pending.
+- Next implementation phase: Phase 8 (explanation/risk panels and PDF export).
+
 ## 0. Repository & Tooling Baseline
 
 ```text
@@ -269,10 +333,10 @@ done," independent of which phase it landed in:
 - [ ] Auth: register/login/logout/refresh/me, hashed passwords, ownership enforced
 - [ ] Projects: CRUD + archive + activity log
 - [ ] Estimates: generation, versioning (immutable), manual hour edit w/ flag
-- [ ] Cost calculation is backend-deterministic, unit tested
-- [ ] AI output validated via Zod, failures handled gracefully, never exposes raw errors
+- [x] Cost calculation is backend-deterministic, unit tested
+- [x] AI output validated via Zod, failures handled gracefully, never exposes raw errors
 - [ ] Semantic search uses pgvector embeddings, not string matching
-- [ ] RAG context demonstrably influences generated estimates
+- [x] RAG context demonstrably influences generated estimates
 - [ ] Dashboard stats + charts, responsive
 - [ ] Risk detection + explanation + stack recommendations from real AI output
 - [ ] PDF export contains all required fields

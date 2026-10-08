@@ -9,7 +9,11 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "predev": "pnpm --filter @ape/types build",
+    "prebuild": "pnpm --filter @ape/types build",
+    "pretest": "pnpm --filter @ape/types build",
+    "pretypecheck": "pnpm --filter @ape/types build"
   },
   "dependencies": {
     "@ape/types": "workspace:*",
@@ -26,6 +30,7 @@
     "@playwright/test": "^1.48.1",
     "@testing-library/jest-dom": "^6.5.0",
     "@testing-library/react": "^16.0.1",
+    "@types/jest": "^29.5.13",
     "@types/node": "^20.16.11",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",

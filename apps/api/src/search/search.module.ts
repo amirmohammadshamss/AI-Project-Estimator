@@ -1,7 +1,5 @@
 import { Module } from '@nestjs/common';
-
-/**
- * Placeholder module — implemented in a later phase (see PLAN.md).
- */
-@Module({})
+import { EmbeddingsModule } from '../embeddings/embeddings.module';
+import { SearchService } from './search.service';
+@Module({ imports: [EmbeddingsModule], providers: [SearchService], exports: [SearchService] })
 export class SearchModule {}

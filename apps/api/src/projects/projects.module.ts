@@ -1,7 +1,13 @@
+import { DashboardCacheModule } from '../dashboard/dashboard-cache.module';
 import { Module } from '@nestjs/common';
+import { ActivityModule } from '../activity/activity.module';
+import { ProjectsService } from './projects.service';
+import { ProjectsController } from './projects.controller';
 
-/**
- * Placeholder module — implemented in a later phase (see PLAN.md).
- */
-@Module({})
+@Module({
+  imports: [DashboardCacheModule, ActivityModule],
+  controllers: [ProjectsController],
+  providers: [ProjectsService],
+  exports: [ProjectsService],
+})
 export class ProjectsModule {}

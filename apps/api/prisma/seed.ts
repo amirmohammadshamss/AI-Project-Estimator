@@ -1,10 +1,26 @@
-/**
- * Seed script — populated in Phase 10 once FeatureKnowledge and demo
- * project/estimate models exist (see PLAN.md §33 / Phase 10).
- */
+import 'reflect-metadata';
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
+import { PrismaModule } from '../src/prisma/prisma.module';
+import { PrismaService } from '../src/prisma/prisma.service';
+import { EmbeddingsModule } from '../src/embeddings/embeddings.module';
+import { EmbeddingsService } from '../src/embeddings/embeddings.service';
+import { seedKnowledge } from '../src/embeddings/seed-knowledge';
+@Module({ imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, EmbeddingsModule] })
+class SeedModule {}
 async function main() {
-  // eslint-disable-next-line no-console
-  console.log('No seed data yet — see PLAN.md Phase 10.');
+  const app = await NestFactory.createApplicationContext(SeedModule, { logger: false });
+  try {
+    const count = await seedKnowledge(app.get(PrismaService), app.get(EmbeddingsService));
+    console.log(
+      `Seeded ${count} knowledge-base features. Search caches expire within five minutes.`,
+    );
+  } finally {
+    await app.close();
+  }
 }
-
-main();
+main().catch(() => {
+  console.error('Knowledge seed failed. Check database migrations and backend AI configuration.');
+  process.exitCode = 1;
+});
