@@ -28,7 +28,7 @@ export class AuthService {
     return createHash('sha256').update(token).digest('hex');
   }
 
-  private async issueTokens(user: SafeUser): Promise<AuthTokens> {
+  private async issueTokens(user: SafeUser, expectedHash?: string): Promise<AuthTokens> {
     const payload: AccessTokenPayload = { sub: user.id, email: user.email };
 
     const accessToken = await this.jwtService.signAsync(payload, {
@@ -44,12 +44,24 @@ export class AuthService {
       },
     );
 
-    await this.redis.set(
-      refreshTokenRedisKey(user.id),
-      this.hashToken(refreshToken),
-      'EX',
-      REFRESH_TOKEN_TTL_SECONDS,
-    );
+    if (expectedHash === undefined) {
+      await this.redis.set(
+        refreshTokenRedisKey(user.id),
+        this.hashToken(refreshToken),
+        'EX',
+        REFRESH_TOKEN_TTL_SECONDS,
+      );
+    } else {
+      const rotated = await this.redis.eval(
+        'if redis.call("GET", KEYS[1]) == ARGV[1] then redis.call("SET", KEYS[1], ARGV[2], "EX", ARGV[3]); return 1 else return 0 end',
+        1,
+        refreshTokenRedisKey(user.id),
+        expectedHash,
+        this.hashToken(refreshToken),
+        REFRESH_TOKEN_TTL_SECONDS,
+      );
+      if (rotated !== 1) throw new UnauthorizedException('Refresh token has been revoked.');
+    }
 
     return { accessToken, refreshToken };
   }
@@ -94,17 +106,12 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired refresh token.');
     }
 
-    const storedHash = await this.redis.get(refreshTokenRedisKey(payload.sub));
-    if (!storedHash || storedHash !== this.hashToken(refreshToken)) {
-      throw new UnauthorizedException('Refresh token has been revoked.');
-    }
-
     const user = await this.usersService.findById(payload.sub);
     if (!user) {
       throw new UnauthorizedException('User no longer exists.');
     }
 
-    return this.issueTokens(user);
+    return this.issueTokens(user, this.hashToken(refreshToken));
   }
 
   async logout(userId: string): Promise<void> {

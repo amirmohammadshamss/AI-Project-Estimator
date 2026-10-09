@@ -13,7 +13,8 @@
     "predev": "pnpm --filter @ape/types build",
     "prebuild": "pnpm --filter @ape/types build",
     "pretest": "pnpm --filter @ape/types build",
-    "pretypecheck": "pnpm --filter @ape/types build"
+    "pretypecheck": "pnpm --filter @ape/types build",
+    "pretest:e2e": "pnpm --filter @ape/types build && pnpm --filter @ape/api prisma:generate"
   },
   "dependencies": {
     "@ape/types": "workspace:*",

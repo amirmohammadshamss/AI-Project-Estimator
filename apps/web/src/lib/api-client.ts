@@ -10,7 +10,23 @@ export class ApiError extends Error {
   }
 }
 
-async function fetchResponse(path: string, init?: RequestInit): Promise<Response> {
+let refreshRequest: Promise<boolean> | undefined;
+async function refreshSession(): Promise<boolean> {
+  if (!refreshRequest) {
+    refreshRequest = fetch(`${API_URL}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then((response) => response.ok)
+      .catch(() => false)
+      .finally(() => {
+        refreshRequest = undefined;
+      });
+  }
+  return refreshRequest;
+}
+async function fetchResponse(path: string, init?: RequestInit, retried = false): Promise<Response> {
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
     credentials: 'include',
@@ -20,6 +36,9 @@ async function fetchResponse(path: string, init?: RequestInit): Promise<Response
     },
   });
 
+  const canRefresh = !['/auth/login', '/auth/register', '/auth/refresh'].includes(path);
+  if (res.status === 401 && canRefresh && !retried && (await refreshSession()))
+    return fetchResponse(path, init, true);
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new ApiError(body.message ?? 'Request failed', res.status, body.code);

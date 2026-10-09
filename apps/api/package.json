@@ -13,11 +13,13 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
     "prisma:seed": "ts-node prisma/seed.ts",
-    "prebuild": "pnpm --filter @ape/types build",
-    "pretest": "pnpm --filter @ape/types build",
-    "pretypecheck": "pnpm --filter @ape/types build",
-    "predev": "pnpm --filter @ape/types build",
-    "preprisma:seed": "pnpm --filter @ape/types build"
+    "prebuild": "pnpm --filter @ape/types build && prisma generate",
+    "pretest": "pnpm --filter @ape/types build && prisma generate",
+    "pretypecheck": "pnpm --filter @ape/types build && prisma generate",
+    "predev": "pnpm --filter @ape/types build && prisma generate",
+    "preprisma:seed": "pnpm --filter @ape/types build",
+    "seed:demo": "ts-node prisma/seed-demo.ts",
+    "preseed:demo": "pnpm --filter @ape/types build && prisma generate"
   },
   "dependencies": {
     "@ape/types": "workspace:*",
@@ -36,6 +38,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "cookie-parser": "^1.4.7",
+    "helmet": "^8.3.0",
     "ioredis": "^5.4.1",
     "openai": "^7.30.1",
     "passport": "^0.7.0",

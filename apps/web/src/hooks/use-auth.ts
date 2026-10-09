@@ -26,7 +26,11 @@ export function useLogin() {
   return useMutation({
     mutationFn: (input: { email: string; password: string }) =>
       apiClient.post<{ success: boolean }>('/auth/login', input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: CURRENT_USER_KEY }),
+    onSuccess: () => {
+      queryClient.setQueryData(CURRENT_USER_KEY, null);
+      queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' });
+      return queryClient.invalidateQueries({ queryKey: CURRENT_USER_KEY });
+    },
   });
 }
 
@@ -35,7 +39,11 @@ export function useRegister() {
   return useMutation({
     mutationFn: (input: { email: string; password: string; name?: string }) =>
       apiClient.post<{ success: boolean }>('/auth/register', input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: CURRENT_USER_KEY }),
+    onSuccess: () => {
+      queryClient.setQueryData(CURRENT_USER_KEY, null);
+      queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' });
+      return queryClient.invalidateQueries({ queryKey: CURRENT_USER_KEY });
+    },
   });
 }
 
@@ -43,6 +51,9 @@ export function useLogout() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => apiClient.post<{ success: boolean }>('/auth/logout'),
-    onSuccess: () => queryClient.setQueryData(CURRENT_USER_KEY, null),
+    onSuccess: () => {
+      queryClient.setQueryData(CURRENT_USER_KEY, null);
+      queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' });
+    },
   });
 }

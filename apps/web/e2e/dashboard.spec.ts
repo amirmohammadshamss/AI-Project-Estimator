@@ -60,7 +60,7 @@ async function mockApi(page: Page, failFirst = false) {
     .context()
     .addCookies([{ name: 'refresh_token', value: 'test-session', domain: 'localhost', path: '/' }]);
   let calls = 0;
-  await page.route('http://localhost:4000/**', async (route) => {
+  await page.route('http://localhost:4100/**', async (route) => {
     const headers = {
       'access-control-allow-origin': 'http://localhost:3100',
       'access-control-allow-credentials': 'true',

@@ -10,7 +10,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { AuthService, AuthTokens } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -18,11 +18,18 @@ import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from './current-user.decorator';
 import { RequestUser } from './types';
-import { ACCESS_TOKEN_COOKIE, ACCESS_TOKEN_TTL_SECONDS, REFRESH_TOKEN_COOKIE, REFRESH_TOKEN_TTL_SECONDS } from './auth.constants';
+import {
+  ACCESS_TOKEN_COOKIE,
+  ACCESS_TOKEN_TTL_SECONDS,
+  REFRESH_TOKEN_COOKIE,
+  REFRESH_TOKEN_TTL_SECONDS,
+} from './auth.constants';
 import { UsersService } from '../users/users.service';
 import { UpdateProfileDto } from '../users/dto/update-profile.dto';
 
-const isProduction = process.env.NODE_ENV === 'production';
+const secureCookies = () =>
+  process.env.COOKIE_SECURE === 'true' ||
+  (process.env.COOKIE_SECURE !== 'false' && process.env.NODE_ENV === 'production');
 
 @ApiTags('auth')
 @Controller('auth')
@@ -35,14 +42,14 @@ export class AuthController {
   private setAuthCookies(res: Response, tokens: AuthTokens): void {
     res.cookie(ACCESS_TOKEN_COOKIE, tokens.accessToken, {
       httpOnly: true,
-      secure: isProduction,
+      secure: secureCookies(),
       sameSite: 'lax',
       maxAge: ACCESS_TOKEN_TTL_SECONDS * 1000,
       path: '/',
     });
     res.cookie(REFRESH_TOKEN_COOKIE, tokens.refreshToken, {
       httpOnly: true,
-      secure: isProduction,
+      secure: secureCookies(),
       sameSite: 'lax',
       maxAge: REFRESH_TOKEN_TTL_SECONDS * 1000,
       path: '/',
@@ -50,8 +57,18 @@ export class AuthController {
   }
 
   private clearAuthCookies(res: Response): void {
-    res.clearCookie(ACCESS_TOKEN_COOKIE, { path: '/' });
-    res.clearCookie(REFRESH_TOKEN_COOKIE, { path: '/' });
+    res.clearCookie(ACCESS_TOKEN_COOKIE, {
+      path: '/',
+      httpOnly: true,
+      secure: secureCookies(),
+      sameSite: 'lax',
+    });
+    res.clearCookie(REFRESH_TOKEN_COOKIE, {
+      path: '/',
+      httpOnly: true,
+      secure: secureCookies(),
+      sameSite: 'lax',
+    });
   }
 
   @Post('register')
@@ -71,7 +88,7 @@ export class AuthController {
   @Post('logout')
   @HttpCode(200)
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiCookieAuth('cookieAuth')
   async logout(@CurrentUser() user: RequestUser, @Res({ passthrough: true }) res: Response) {
     await this.authService.logout(user.userId);
     this.clearAuthCookies(res);
@@ -85,14 +102,19 @@ export class AuthController {
       throw new UnauthorizedException('Missing refresh token.');
     }
 
-    const tokens = await this.authService.refresh(refreshToken);
-    this.setAuthCookies(res, tokens);
-    return { success: true };
+    try {
+      const tokens = await this.authService.refresh(refreshToken);
+      this.setAuthCookies(res, tokens);
+      return { success: true };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) this.clearAuthCookies(res);
+      throw error;
+    }
   }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiCookieAuth('cookieAuth')
   async me(@CurrentUser() user: RequestUser) {
     const fullUser = await this.usersService.findById(user.userId);
     if (!fullUser) {
@@ -103,7 +125,7 @@ export class AuthController {
 
   @Patch('me')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiCookieAuth('cookieAuth')
   async updateProfile(@CurrentUser() user: RequestUser, @Body() dto: UpdateProfileDto) {
     return this.usersService.updateProfile(user.userId, dto.name);
   }

@@ -1,26 +1,49 @@
 import 'reflect-metadata';
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import { PrismaModule } from '../src/prisma/prisma.module';
+import { ConfigService } from '@nestjs/config';
+import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
-import { EmbeddingsModule } from '../src/embeddings/embeddings.module';
+import { UsersService } from '../src/users/users.service';
+import { ProjectsService } from '../src/projects/projects.service';
+import { EstimatesService } from '../src/estimates/estimates.service';
 import { EmbeddingsService } from '../src/embeddings/embeddings.service';
 import { seedKnowledge } from '../src/embeddings/seed-knowledge';
-@Module({ imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, EmbeddingsModule] })
-class SeedModule {}
-async function main() {
-  const app = await NestFactory.createApplicationContext(SeedModule, { logger: false });
+import { seedDemo } from '../src/embeddings/seed-demo';
+export async function runSeed(ai: boolean) {
+  const app = await NestFactory.createApplicationContext(AppModule, { logger: false });
   try {
-    const count = await seedKnowledge(app.get(PrismaService), app.get(EmbeddingsService));
+    const config = app.get(ConfigService);
+    const email = config.get<string>('DEMO_EMAIL') ?? 'demo@example.com';
+    const password = config.get<string>('DEMO_PASSWORD');
+    const prisma = app.get(PrismaService);
+    if (
+      !(await prisma.user.findUnique({ where: { email } })) &&
+      (!password || password.length < 12)
+    )
+      throw new Error('Set DEMO_PASSWORD to at least 12 characters for a new demo account.');
+    if (ai) {
+      if (!config.get<string>('OPENAI_API_KEY')?.trim())
+        throw new Error('Set OPENAI_API_KEY for embedded knowledge and AI-generated demos.');
+      await seedKnowledge(prisma, app.get(EmbeddingsService));
+    }
+    const count = await seedDemo(
+      prisma,
+      app.get(UsersService),
+      app.get(ProjectsService),
+      app.get(EstimatesService),
+      { email, password, ai },
+    );
     console.log(
-      `Seeded ${count} knowledge-base features. Search caches expire within five minutes.`,
+      `Created ${count} demo estimates for the configured demo account. Existing estimates were retained.`,
     );
   } finally {
     await app.close();
   }
 }
-main().catch(() => {
-  console.error('Knowledge seed failed. Check database migrations and backend AI configuration.');
-  process.exitCode = 1;
-});
+if (require.main === module)
+  runSeed(true).catch(() => {
+    console.error(
+      'Seed failed. Check database/Redis, migrations, JWT secrets, DEMO_PASSWORD and OPENAI_API_KEY.',
+    );
+    process.exitCode = 1;
+  });

@@ -2,6 +2,7 @@
 
 import { useDashboard } from '../../hooks/use-dashboard';
 import { DashboardOverview } from '../../components/dashboard-overview';
+import { ApiError } from '../../lib/api-client';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -9,15 +10,15 @@ import { useCurrentUser, useLogout } from '../../hooks/use-auth';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { data: user, isLoading, isError } = useCurrentUser();
+  const { data: user, isLoading, isError, error, refetch } = useCurrentUser();
   const logout = useLogout();
   const stats = useDashboard(user?.id);
 
   useEffect(() => {
-    if (isError) {
+    if (isError && error instanceof ApiError && error.statusCode === 401) {
       router.replace('/login');
     }
-  }, [isError, router]);
+  }, [isError, error, router]);
 
   if (isLoading) {
     return (
@@ -28,7 +29,14 @@ export default function DashboardPage() {
   }
 
   if (!user) {
-    return null;
+    return isError ? (
+      <main className="p-8">
+        <p role="alert">Could not verify your session.</p>
+        <button className="mt-3 underline" onClick={() => refetch()}>
+          Try again
+        </button>
+      </main>
+    ) : null;
   }
 
   return (

@@ -107,18 +107,16 @@ projects. Recharts resize to their containers and have text data alternatives.
 Redis caches each user's stats for 60 seconds, with revision invalidation after
 project/estimate mutations and fresh reads when Redis is unavailable.
 
-The dashboard browser tests mock the API and need no database or OpenAI key:
+The browser suite uses test fixtures and needs no database or OpenAI key:
 
 ```sh
-pnpm --filter @ape/web build
 pnpm --filter @ape/web exec playwright install chromium
-pnpm test:e2e
+pnpm e2e
 ```
 
 To use an existing Chrome installation instead of downloading Chromium, set
 `PLAYWRIGHT_CHANNEL=chrome` when running `pnpm test:e2e`. These tests verify three
-viewport sizes and retry behavior; the full application acceptance journey is
-still scheduled for Phase 9.
+viewport sizes, retry behavior, and the full register-to-export acceptance journey.
 
 ## Estimate insights and PDF reports
 
@@ -148,3 +146,32 @@ An `ESTIMATE_EXPORTED` activity is written only after rendering succeeds and
 ownership is rechecked. Failed rendering produces a sanitized `PDF_EXPORT_FAILED`
 error. The PDF tests extract the report text and check pagination; browser tests
 check the insights controls and download behavior using mocked API responses.
+
+## Test isolation and authentication hardening
+
+`pnpm test` runs backend unit/service integration tests and frontend component
+checks. `pnpm e2e` (alias of `pnpm test:e2e`) starts the test API on localhost:4100,
+a loopback OpenAI HTTP stub on 4101, and Next.js on localhost:3100. Those ports must
+be free. Servers are shut down after the run. A browser is required; install
+Chromium using the command above or set `PLAYWRIGHT_CHANNEL=chrome`.
+
+The acceptance flow uses real Nest routes, validation, password hashing, JWT
+cookies, cost/version logic, AI output validation and PDF rendering. Only database
+and Redis boundaries use in-memory adapters, while the actual OpenAI SDK sends
+HTTP requests to the local stub. Test configuration is isolated from ambient
+OpenAI environment values, so it needs no live key and sends no real API requests.
+The adapter suite is not evidence for production SQL locking, pgvector ranking,
+Redis Lua execution, or migrations; run the opt-in database test and live acceptance
+walkthrough separately. The six layout/control tests still mock API responses.
+
+The client shares a single in-flight refresh for concurrent 401 responses and
+retries each request once. Login/register failures do not trigger refresh. The
+backend rotates refresh tokens atomically with a Redis Lua compare-and-replace,
+rejects reused tokens, and clears invalid session cookies. Login/logout also clear
+private cached project/estimate/dashboard data. A failed session check caused by
+network/server problems offers retry instead of cycling through login redirects.
+
+API check/build/dev scripts generate the Prisma client and shared runtime schemas.
+No `.env` or API key is needed for the default tests. Production uses the standard
+OpenAI endpoint unless optional `OPENAI_BASE_URL` is set; the test server supplies
+its own loopback endpoint without adding mock modes to the production application.

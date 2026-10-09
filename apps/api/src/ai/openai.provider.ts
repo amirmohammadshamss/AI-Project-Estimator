@@ -16,7 +16,8 @@ export class OpenAiProvider implements AiProvider {
       const timeout = Number(this.config.get<string>('OPENAI_TIMEOUT_MS') ?? 60000);
       if (!Number.isFinite(timeout) || timeout < 1000 || timeout > 120000)
         throw new AiProviderError('invalid_configuration');
-      this.client = new OpenAI({ apiKey, timeout, maxRetries: 0 });
+      const baseURL = this.config.get<string>('OPENAI_BASE_URL');
+      this.client = new OpenAI({ apiKey, timeout, maxRetries: 0, ...(baseURL ? { baseURL } : {}) });
     }
     return this.client;
   }

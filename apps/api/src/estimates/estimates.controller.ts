@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RequestUser } from '../auth/types';
@@ -7,7 +7,7 @@ import { CreateEstimateDto, EditHoursDto, GenerateEstimateDto } from './dto/crea
 import { EstimatesService } from './estimates.service';
 
 @ApiTags('estimates')
-@ApiBearerAuth()
+@ApiCookieAuth('cookieAuth')
 @UseGuards(JwtAuthGuard)
 @Controller('projects/:projectId/estimates')
 export class EstimatesController {

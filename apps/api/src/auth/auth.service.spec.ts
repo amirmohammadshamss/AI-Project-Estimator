@@ -1,3 +1,5 @@
+import { JwtService } from '@nestjs/jwt';
+import Redis from 'ioredis';
 import { UnauthorizedException } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { AuthService } from './auth.service';
@@ -15,9 +17,11 @@ describe('AuthService', () => {
     updatedAt: new Date(),
   };
 
-  let usersService: jest.Mocked<Pick<UsersService, 'create' | 'findByEmail' | 'findById' | 'verifyPassword'>>;
+  let usersService: jest.Mocked<
+    Pick<UsersService, 'create' | 'findByEmail' | 'findById' | 'verifyPassword'>
+  >;
   let jwtService: { signAsync: jest.Mock; verifyAsync: jest.Mock };
-  let redis: { set: jest.Mock; get: jest.Mock; del: jest.Mock };
+  let redis: { set: jest.Mock; get: jest.Mock; del: jest.Mock; eval: jest.Mock };
   let authService: AuthService;
 
   beforeEach(() => {
@@ -28,19 +32,20 @@ describe('AuthService', () => {
       verifyPassword: jest.fn(),
     };
     jwtService = {
-      signAsync: jest.fn(),
+      signAsync: jest.fn().mockResolvedValue('generated-token'),
       verifyAsync: jest.fn(),
     };
     redis = {
       set: jest.fn(),
       get: jest.fn(),
       del: jest.fn(),
+      eval: jest.fn().mockResolvedValue(1),
     };
 
     authService = new AuthService(
       usersService as unknown as UsersService,
-      jwtService as any,
-      redis as any,
+      jwtService as unknown as JwtService,
+      redis as unknown as Redis,
     );
   });
 
@@ -74,7 +79,7 @@ describe('AuthService', () => {
     });
 
     it('rejects an incorrect password', async () => {
-      usersService.findByEmail.mockResolvedValue({ ...user, passwordHash: 'hash' } as any);
+      usersService.findByEmail.mockResolvedValue({ ...user, passwordHash: 'hash' });
       usersService.verifyPassword.mockResolvedValue(false);
 
       await expect(authService.login(user.email, 'wrong-password')).rejects.toBeInstanceOf(
@@ -83,7 +88,7 @@ describe('AuthService', () => {
     });
 
     it('issues a token pair for valid credentials', async () => {
-      usersService.findByEmail.mockResolvedValue({ ...user, passwordHash: 'hash' } as any);
+      usersService.findByEmail.mockResolvedValue({ ...user, passwordHash: 'hash' });
       usersService.verifyPassword.mockResolvedValue(true);
       jwtService.signAsync
         .mockResolvedValueOnce('access-token')
@@ -104,9 +109,12 @@ describe('AuthService', () => {
 
     it('rejects a token that does not match the stored hash (already rotated)', async () => {
       jwtService.verifyAsync.mockResolvedValue({ sub: user.id, email: user.email });
-      redis.get.mockResolvedValue(hash('some-other-token'));
+      usersService.findById.mockResolvedValue(user);
+      redis.eval.mockResolvedValue(0);
 
-      await expect(authService.refresh('stale-token')).rejects.toBeInstanceOf(UnauthorizedException);
+      await expect(authService.refresh('stale-token')).rejects.toBeInstanceOf(
+        UnauthorizedException,
+      );
     });
 
     it('rejects when the user no longer exists', async () => {
@@ -114,7 +122,22 @@ describe('AuthService', () => {
       redis.get.mockResolvedValue(hash('current-token'));
       usersService.findById.mockResolvedValue(null);
 
-      await expect(authService.refresh('current-token')).rejects.toBeInstanceOf(UnauthorizedException);
+      await expect(authService.refresh('current-token')).rejects.toBeInstanceOf(
+        UnauthorizedException,
+      );
+    });
+
+    it('allows only one refresh when requests concurrently present the same token', async () => {
+      jwtService.verifyAsync.mockResolvedValue({ sub: user.id, email: user.email });
+      usersService.findById.mockResolvedValue(user);
+      jwtService.signAsync.mockResolvedValue('new-token');
+      redis.eval.mockResolvedValueOnce(1).mockResolvedValueOnce(0);
+      const results = await Promise.allSettled([
+        authService.refresh('current-token'),
+        authService.refresh('current-token'),
+      ]);
+      expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+      expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1);
     });
 
     it('rotates and issues a new token pair on success', async () => {
@@ -131,12 +154,15 @@ describe('AuthService', () => {
         accessToken: 'new-access-token',
         refreshToken: 'new-refresh-token',
       });
-      expect(redis.set).toHaveBeenCalledWith(
+      expect(redis.eval).toHaveBeenCalledWith(
+        expect.stringContaining('redis.call("GET"'),
+        1,
         refreshTokenRedisKey(user.id),
+        hash('current-token'),
         hash('new-refresh-token'),
-        'EX',
         expect.any(Number),
       );
+      expect(redis.set).not.toHaveBeenCalled();
     });
   });
 

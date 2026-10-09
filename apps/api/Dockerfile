@@ -1,5 +1,6 @@
 FROM node:20-alpine AS base
 RUN corepack enable
+RUN apk add --no-cache openssl
 WORKDIR /repo
 
 FROM base AS deps
@@ -19,5 +20,6 @@ FROM base AS runtime
 ENV NODE_ENV=production
 COPY --from=build /repo /repo
 WORKDIR /repo/apps/api
+USER node
 EXPOSE 4000
 CMD ["node", "dist/main.js"]

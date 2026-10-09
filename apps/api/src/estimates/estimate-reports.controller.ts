@@ -7,13 +7,13 @@ import {
   StreamableFile,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiProduces, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiOperation, ApiProduces, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RequestUser } from '../auth/types';
 import { EstimateReportsService } from './estimate-reports.service';
 @ApiTags('estimates')
-@ApiBearerAuth()
+@ApiCookieAuth('cookieAuth')
 @UseGuards(JwtAuthGuard)
 @Controller('estimates')
 export class EstimateReportsController {

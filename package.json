@@ -15,10 +15,14 @@
     "test": "pnpm -r test",
     "test:e2e": "pnpm --filter @ape/web test:e2e",
     "format": "prettier --write .",
-    "db:migrate": "pnpm --filter @ape/api prisma:migrate",
-    "db:seed": "pnpm --filter @ape/api prisma:seed"
+    "db:migrate": "node scripts/env-command.mjs pnpm --filter @ape/api exec prisma migrate deploy",
+    "db:seed": "node scripts/env-command.mjs pnpm --filter @ape/api prisma:seed",
+    "e2e": "pnpm test:e2e",
+    "setup:env": "node scripts/setup-env.mjs",
+    "db:seed:demo": "node scripts/env-command.mjs pnpm --filter @ape/api seed:demo"
   },
   "devDependencies": {
+    "dotenv": "^16.4.5",
     "prettier": "^3.3.3",
     "typescript": "^5.6.3"
   }
