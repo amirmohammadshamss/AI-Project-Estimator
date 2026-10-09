@@ -1,14 +1,10 @@
+import { messages } from '../content/users-users.service';
 import { ConflictException, Injectable } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
 
-export interface SafeUser {
-  id: string;
-  email: string;
-  name: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import type { SafeUser } from './types';
+export type { SafeUser } from './types';
 
 @Injectable()
 export class UsersService {
@@ -33,7 +29,7 @@ export class UsersService {
   async create(email: string, password: string, name?: string): Promise<SafeUser> {
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) {
-      throw new ConflictException('An account with this email already exists.');
+      throw new ConflictException(messages.anAccountWithThisEmailAlreadyExists);
     }
 
     const passwordHash = await argon2.hash(password);

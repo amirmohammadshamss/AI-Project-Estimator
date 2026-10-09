@@ -1,3 +1,4 @@
+import { runtimeEnvironment } from './config/runtime-environment';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -7,7 +8,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   configureApp(app);
   app.enableShutdownHooks();
-  const port = process.env.PORT ? Number(process.env.PORT) : 4000;
+  const port = runtimeEnvironment().port;
   await app.listen(port);
 }
 bootstrap();

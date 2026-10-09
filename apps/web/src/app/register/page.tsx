@@ -1,20 +1,15 @@
 'use client';
+import { texts } from '../../content/register-page';
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { useRegister } from '../../hooks/use-auth';
 import { ApiError } from '../../lib/api-client';
 
-const registerSchema = z.object({
-  name: z.string().min(1, 'Name is required.').max(120),
-  email: z.string().email('Enter a valid email address.'),
-  password: z.string().min(8, 'Password must be at least 8 characters.').max(128),
-});
-
-type RegisterForm = z.infer<typeof registerSchema>;
+import { registerSchema } from '../../schemas/register';
+import type { RegisterForm } from '../../types/register';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -34,11 +29,11 @@ export default function RegisterPage() {
   return (
     <main className="flex min-h-screen items-center justify-center p-6">
       <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="mb-6 text-2xl font-semibold">Create an account</h1>
+        <h1 className="mb-6 text-2xl font-semibold">{texts.createAnAccount}</h1>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <label htmlFor="name" className="mb-1 block text-sm font-medium text-slate-700">
-              Name
+              {texts.name}
             </label>
             <input
               id="name"
@@ -51,7 +46,7 @@ export default function RegisterPage() {
           </div>
           <div>
             <label htmlFor="email" className="mb-1 block text-sm font-medium text-slate-700">
-              Email
+              {texts.email}
             </label>
             <input
               id="email"
@@ -64,7 +59,7 @@ export default function RegisterPage() {
           </div>
           <div>
             <label htmlFor="password" className="mb-1 block text-sm font-medium text-slate-700">
-              Password
+              {texts.password}
             </label>
             <input
               id="password"
@@ -81,7 +76,7 @@ export default function RegisterPage() {
             <p className="text-sm text-red-600">
               {registerUser.error instanceof ApiError
                 ? registerUser.error.message
-                : 'Registration failed.'}
+                : texts.registrationFailed}
             </p>
           )}
           <button
@@ -89,13 +84,13 @@ export default function RegisterPage() {
             disabled={registerUser.isPending}
             className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
           >
-            {registerUser.isPending ? 'Creating account…' : 'Create account'}
+            {registerUser.isPending ? texts.creatingAccount : texts.createAccount}
           </button>
         </form>
         <p className="mt-4 text-sm text-slate-600">
-          Already have an account?{' '}
+          {texts.alreadyHaveAnAccount}{' '}
           <Link href="/login" className="font-medium text-slate-900 underline">
-            Log in
+            {texts.logIn}
           </Link>
         </p>
       </div>

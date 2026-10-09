@@ -1,3 +1,5 @@
+import { serverConstants } from './config/server.constants';
+import { runtimeEnvironment } from './config/runtime-environment';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
@@ -6,12 +8,12 @@ import { json, urlencoded } from 'express';
 
 export function configureApp(app: INestApplication) {
   app.use(helmet());
-  app.use(json({ limit: '2mb' }));
-  app.use(urlencoded({ extended: false, limit: '2mb' }));
+  app.use(json({ limit: serverConstants.bodyLimit }));
+  app.use(urlencoded({ extended: false, limit: serverConstants.bodyLimit }));
   app.use(cookieParser());
 
   app.enableCors({
-    origin: process.env.WEB_ORIGIN ?? 'http://localhost:3000',
+    origin: runtimeEnvironment().webOrigin,
     credentials: true,
   });
 

@@ -3,15 +3,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../lib/api-client';
 
-export interface CurrentUser {
-  id: string;
-  email: string;
-  name: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { CurrentUser } from '../types/auth';
+export type { CurrentUser } from '../types/auth';
 
-const CURRENT_USER_KEY = ['auth', 'me'];
+import { CURRENT_USER_KEY } from '../constants/query-keys';
 
 export function useCurrentUser() {
   return useQuery({

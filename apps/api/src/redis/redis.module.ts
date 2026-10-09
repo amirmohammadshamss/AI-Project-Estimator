@@ -1,7 +1,10 @@
+import { serverConstants } from '../config/server.constants';
+import { runtimeEnvironment } from '../config/runtime-environment';
 import { Global, Module, Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
 
-export const REDIS_CLIENT = 'REDIS_CLIENT';
+import { REDIS_CLIENT } from './redis.constants';
+export { REDIS_CLIENT } from './redis.constants';
 
 @Injectable()
 class RedisLifecycle implements OnModuleDestroy {
@@ -17,9 +20,9 @@ class RedisLifecycle implements OnModuleDestroy {
     {
       provide: REDIS_CLIENT,
       useFactory: () =>
-        new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', {
-          commandTimeout: 2000,
-          maxRetriesPerRequest: 1,
+        new Redis(runtimeEnvironment().redisUrl, {
+          commandTimeout: serverConstants.redisCommandTimeoutMs,
+          maxRetriesPerRequest: serverConstants.redisMaxRetries,
         }),
     },
   ],

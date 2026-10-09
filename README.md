@@ -44,6 +44,13 @@ run outside transactions. AiService keeps a future queue/worker implementation
 separate from controllers; jobs, distributed throttling, vector indexes and
 non-Latin PDF font fallback are future improvements.
 
+Frontend source uses `content/` for UI copy, `types/` for response/form/component
+contracts, `schemas/` for validation, `constants/` for shared defaults and styles,
+and `config/` for public environment settings. API environment access and defaults
+live in `src/config/`; domain types/constants stay with their modules, error copy
+lives in `src/content/`, and AI instructions live in `ai/ai-prompts.ts`.
+Private environment values remain backend-only and are never stored in copy files.
+
 For the full container stack, run `pnpm setup:env`, edit `.env` as needed, then
 `docker compose up --build`. The one-shot migration service completes before the
 API starts; the web service waits for API health. Database data uses a named

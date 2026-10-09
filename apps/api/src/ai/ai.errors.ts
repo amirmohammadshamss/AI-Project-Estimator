@@ -1,4 +1,13 @@
+import { messages } from '../content/ai-ai.errors';
 import { ServiceUnavailableException } from '@nestjs/common';
+export class AiNotConfiguredError extends ServiceUnavailableException {
+  constructor() {
+    super({
+      code: 'AI_NOT_CONFIGURED',
+      message: messages.aiIsNotConfiguredYetYouCan,
+    });
+  }
+}
 export class AiValidationError extends Error {
   constructor() {
     super('AI output failed validation.');
@@ -12,7 +21,7 @@ export class AiProviderError extends Error {
   }
 }
 export class AiGenerationError extends ServiceUnavailableException {
-  constructor(message = 'Could not generate an estimate. Please try again later.') {
+  constructor(message: string = messages.couldNotGenerateAnEstimatePleaseTry) {
     super({
       code: 'AI_GENERATION_FAILED',
       message,

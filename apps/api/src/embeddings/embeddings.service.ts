@@ -1,8 +1,10 @@
+import { aiEnvironment } from '../config/ai-environment';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AiService } from '../ai/ai.service';
 import { AiValidationError } from '../ai/ai.errors';
-export const EMBEDDING_DIMENSIONS = 1536;
+import { EMBEDDING_DIMENSIONS } from './embeddings.constants';
+export { EMBEDDING_DIMENSIONS } from './embeddings.constants';
 export function vectorLiteral(embedding: number[]): string {
   if (
     embedding.length !== EMBEDDING_DIMENSIONS ||
@@ -19,7 +21,7 @@ export class EmbeddingsService {
     private readonly config: ConfigService,
   ) {}
   get model(): string {
-    return this.config.get<string>('OPENAI_EMBEDDING_MODEL') ?? 'text-embedding-3-small';
+    return aiEnvironment(this.config).embeddingModel;
   }
   async generate(text: string): Promise<number[]> {
     const embedding = await this.ai.generateEmbedding(text);

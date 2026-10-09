@@ -1,18 +1,12 @@
 'use client';
-import type { EstimateRisk } from '@ape/types';
-import {
-  Estimate,
-  useAnalyzeRisks,
-  useExplainEstimate,
-  useExportEstimate,
-} from '../hooks/use-estimates';
-const riskStyles = {
-  HIGH: 'bg-red-100 text-red-800',
-  MEDIUM: 'bg-amber-100 text-amber-800',
-  LOW: 'bg-emerald-100 text-emerald-800',
-};
-function RiskList({ risks }: { risks: EstimateRisk[] }) {
-  if (!risks.length) return <p className="mt-3 text-sm text-slate-500">No risks recorded.</p>;
+import type { RiskListProps } from '../types/risk-list-props';
+import type { EstimateInsightsProps } from '../types/estimate-insights-props';
+import { texts } from '../content/estimate-insights';
+
+import { useAnalyzeRisks, useExplainEstimate, useExportEstimate } from '../hooks/use-estimates';
+import { RISK_STYLES as riskStyles } from '../constants/risks';
+function RiskList({ risks }: RiskListProps) {
+  if (!risks.length) return <p className="mt-3 text-sm text-slate-500">{texts.noRisksRecorded}</p>;
   return (
     <ul className="mt-3 space-y-3">
       {risks.map((risk, index) => (
@@ -33,13 +27,7 @@ function RiskList({ risks }: { risks: EstimateRisk[] }) {
     </ul>
   );
 }
-export function EstimateInsights({
-  projectId,
-  estimate,
-}: {
-  projectId: string;
-  estimate: Estimate;
-}) {
+export function EstimateInsights({ projectId, estimate }: EstimateInsightsProps) {
   const explain = useExplainEstimate(estimate.id);
   const analyze = useAnalyzeRisks(estimate.id);
   const exportPdf = useExportEstimate(projectId, estimate.id, estimate.version);
@@ -48,9 +36,9 @@ export function EstimateInsights({
       <section className="rounded-xl border bg-white p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="font-semibold">Client report</h2>
+            <h2 className="font-semibold">{texts.clientReport}</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Exports this saved version, its project snapshot, recommendations and risks.
+              {texts.exportsThisSavedVersionItsProjectSnapshotRecommendations}
             </p>
           </div>
           <button
@@ -58,7 +46,7 @@ export function EstimateInsights({
             disabled={exportPdf.isPending}
             onClick={() => exportPdf.mutate()}
           >
-            {exportPdf.isPending ? 'Exporting PDF…' : 'Export PDF'}
+            {exportPdf.isPending ? texts.exportingPDF : texts.exportPDF}
           </button>
         </div>
         {exportPdf.isError && (
@@ -69,16 +57,16 @@ export function EstimateInsights({
       </section>
       <div className="grid min-w-0 gap-6 lg:grid-cols-2">
         <section className="min-w-0 rounded-xl border bg-white p-4">
-          <h2 className="font-semibold">Why this estimate</h2>
+          <h2 className="font-semibold">{texts.whyThisEstimate}</h2>
           <p className="mt-2 text-sm text-slate-500">
-            Get a concise explanation of this version&apos;s features, assumptions and uncertainty.
+            {texts.getAConciseExplanationOfThisVersionS}
           </p>
           <button
             className="mt-3 rounded border px-3 py-2 text-sm disabled:opacity-50"
             disabled={explain.isPending}
             onClick={() => explain.mutate()}
           >
-            {explain.isPending ? 'Explaining…' : 'Explain estimate'}
+            {explain.isPending ? texts.explaining : texts.explainEstimate}
           </button>
           {explain.isError && (
             <p role="alert" className="mt-3 text-red-600">
@@ -92,7 +80,7 @@ export function EstimateInsights({
           )}
         </section>
         <section className="min-w-0 rounded-xl border bg-white p-4">
-          <h2 className="font-semibold">Technology recommendations</h2>
+          <h2 className="font-semibold">{texts.technologyRecommendations}</h2>
           {estimate.suggestedStack.length ? (
             <ul className="mt-3 grid gap-2 sm:grid-cols-2">
               {estimate.suggestedStack.map((technology, index) => (
@@ -106,24 +94,23 @@ export function EstimateInsights({
             </ul>
           ) : (
             <p className="mt-3 text-sm text-slate-500">
-              No technology recommendations recorded for this version.
+              {texts.noTechnologyRecommendationsRecordedForThisVersion}
             </p>
           )}
         </section>
       </div>
       <section className="rounded-xl border bg-white p-4">
-        <h2 className="font-semibold">Saved risks</h2>
+        <h2 className="font-semibold">{texts.savedRisks}</h2>
         <RiskList risks={estimate.risks} />
         <button
           className="mt-4 rounded border px-3 py-2 text-sm disabled:opacity-50"
           disabled={analyze.isPending}
           onClick={() => analyze.mutate()}
         >
-          {analyze.isPending ? 'Analyzing risks…' : 'Analyze risks'}
+          {analyze.isPending ? texts.analyzingRisks : texts.analyzeRisks}
         </button>
         <p className="mt-2 text-xs text-slate-500">
-          Additional analysis uses the saved project description. It does not change the saved
-          version or exported risks.
+          {texts.additionalAnalysisUsesTheSavedProjectDescriptionIt}
         </p>
         {analyze.isError && (
           <p role="alert" className="mt-3 text-red-600">
@@ -132,7 +119,7 @@ export function EstimateInsights({
         )}
         {analyze.data && (
           <div aria-live="polite" className="mt-4">
-            <h3 className="font-medium">Additional risk analysis</h3>
+            <h3 className="font-medium">{texts.additionalRiskAnalysis}</h3>
             <RiskList risks={analyze.data.risks} />
           </div>
         )}

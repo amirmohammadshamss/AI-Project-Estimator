@@ -1,20 +1,16 @@
 'use client';
+import { texts } from '../../content/projects-page';
 
 import { useState } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { useCreateProject, useProjects } from '../../hooks/use-projects';
 import { StatusBadge } from '../../components/status-badge';
 import { ApiError } from '../../lib/api-client';
 
-const createProjectSchema = z.object({
-  name: z.string().min(1, 'Project name is required.').max(200),
-  description: z.string().min(1, 'Project description is required.').max(5000),
-});
-
-type CreateProjectForm = z.infer<typeof createProjectSchema>;
+import { createProjectSchema } from '../../schemas/create-project';
+import type { CreateProjectForm } from '../../types/create-project';
 
 export default function ProjectsPage() {
   const { data: projects, isLoading, isError } = useProjects();
@@ -40,13 +36,13 @@ export default function ProjectsPage() {
   return (
     <main className="mx-auto max-w-3xl p-6 sm:p-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Projects</h1>
+        <h1 className="text-2xl font-semibold">{texts.projects}</h1>
         <button
           type="button"
           onClick={() => setIsCreating((v) => !v)}
           className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700"
         >
-          {isCreating ? 'Cancel' : 'New project'}
+          {isCreating ? texts.cancel : texts.newProject}
         </button>
       </div>
 
@@ -57,28 +53,25 @@ export default function ProjectsPage() {
         >
           <div>
             <label htmlFor="name" className="mb-1 block text-sm font-medium text-slate-700">
-              Project name
+              {texts.projectName}
             </label>
             <input
               id="name"
               type="text"
-              placeholder="Food Delivery Platform"
+              placeholder={texts.foodDeliveryPlatform}
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
               {...register('name')}
             />
             {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
           </div>
           <div>
-            <label
-              htmlFor="description"
-              className="mb-1 block text-sm font-medium text-slate-700"
-            >
-              Project description
+            <label htmlFor="description" className="mb-1 block text-sm font-medium text-slate-700">
+              {texts.projectDescription}
             </label>
             <textarea
               id="description"
               rows={4}
-              placeholder="A mobile and web platform where customers can order food from restaurants, track delivery status, and pay online."
+              placeholder={texts.aMobileAndWebPlatformWhereCustomersCan}
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
               {...register('description')}
             />
@@ -90,7 +83,7 @@ export default function ProjectsPage() {
             <p className="text-sm text-red-600">
               {createProject.error instanceof ApiError
                 ? createProject.error.message
-                : 'Could not create the project.'}
+                : texts.couldNotCreateTheProject}
             </p>
           )}
           <button
@@ -98,21 +91,19 @@ export default function ProjectsPage() {
             disabled={createProject.isPending}
             className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
           >
-            {createProject.isPending ? 'Creating…' : 'Create project'}
+            {createProject.isPending ? texts.creating : texts.createProject}
           </button>
         </form>
       )}
 
       <div className="mt-6">
-        {isLoading && <p className="text-sm text-slate-500">Loading projects…</p>}
+        {isLoading && <p className="text-sm text-slate-500">{texts.loadingProjects}</p>}
         {isError && (
-          <p className="text-sm text-red-600">Could not load your projects. Please try again.</p>
+          <p className="text-sm text-red-600">{texts.couldNotLoadYourProjectsPleaseTryAgain}</p>
         )}
         {!isLoading && !isError && projects?.length === 0 && (
           <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center">
-            <p className="text-sm text-slate-500">
-              You don&apos;t have any projects yet. Create one to get started.
-            </p>
+            <p className="text-sm text-slate-500">{texts.youDonTHaveAnyProjectsYetCreate}</p>
           </div>
         )}
         {projects && projects.length > 0 && (

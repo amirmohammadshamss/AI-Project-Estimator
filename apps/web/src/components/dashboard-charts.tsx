@@ -1,5 +1,7 @@
 'use client';
-import { DashboardStats } from '@ape/types';
+import type { DashboardChartsProps } from '../types/dashboard-charts-props';
+import { texts } from '../content/dashboard-charts';
+
 import {
   Bar,
   BarChart,
@@ -15,9 +17,9 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-const labels = { DRAFT: 'Draft', ESTIMATED: 'Estimated', ARCHIVED: 'Archived' };
-const colors = ['#64748b', '#10b981', '#f59e0b'];
-export function DashboardCharts({ stats }: { stats: DashboardStats }) {
+import { PROJECT_STATUS_LABELS as labels } from '../constants/project-status';
+import { CHART_COLORS as colors } from '../constants/dashboard';
+export function DashboardCharts({ stats }: DashboardChartsProps) {
   const hours = stats.hoursByProject.map((project) => ({
     ...project,
     hours: Number(project.hours),
@@ -27,10 +29,10 @@ export function DashboardCharts({ stats }: { stats: DashboardStats }) {
     .filter((group) => group.count > 0)
     .map((group) => ({ name: labels[group.status], count: group.count }));
   return (
-    <section aria-label="Dashboard charts" className="grid min-w-0 gap-6 lg:grid-cols-2">
+    <section aria-label={texts.dashboardCharts} className="grid min-w-0 gap-6 lg:grid-cols-2">
       <article className="min-w-0 rounded-xl border bg-white p-4">
-        <h2 className="font-semibold">Estimated hours by project</h2>
-        <p className="text-sm text-slate-500">Ten largest projects · latest estimate</p>
+        <h2 className="font-semibold">{texts.estimatedHoursByProject}</h2>
+        <p className="text-sm text-slate-500">{texts.tenLargestProjectsLatestEstimate}</p>
         {hours.length ? (
           <>
             <div className="mt-4 h-64">
@@ -47,22 +49,24 @@ export function DashboardCharts({ stats }: { stats: DashboardStats }) {
               </ResponsiveContainer>
             </div>
             <details className="mt-3 text-sm">
-              <summary>View hours data</summary>
+              <summary>{texts.viewHoursData}</summary>
               <ul>
                 {stats.hoursByProject.map((project) => (
                   <li key={project.projectId}>
-                    {project.name}: {project.hours} hours
+                    {project.name}
+                    {texts.symbol}
+                    {project.hours} {texts.hours}
                   </li>
                 ))}
               </ul>
             </details>
           </>
         ) : (
-          <p className="py-12 text-sm text-slate-500">Create an estimate to see project hours.</p>
+          <p className="py-12 text-sm text-slate-500">{texts.createAnEstimateToSeeProjectHours}</p>
         )}
       </article>
       <article className="min-w-0 rounded-xl border bg-white p-4">
-        <h2 className="font-semibold">Project status</h2>
+        <h2 className="font-semibold">{texts.projectStatus}</h2>
         {statuses.length ? (
           <div className="mt-4 h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -85,12 +89,14 @@ export function DashboardCharts({ stats }: { stats: DashboardStats }) {
             </ResponsiveContainer>
           </div>
         ) : (
-          <p className="py-12 text-sm text-slate-500">No projects yet.</p>
+          <p className="py-12 text-sm text-slate-500">{texts.noProjectsYet}</p>
         )}
         <ul className="mt-3 flex flex-wrap gap-3 text-sm">
           {stats.statusDistribution.map((group) => (
             <li key={group.status}>
-              {labels[group.status]}: {group.count}
+              {labels[group.status]}
+              {texts.symbol}
+              {group.count}
             </li>
           ))}
         </ul>
@@ -98,9 +104,12 @@ export function DashboardCharts({ stats }: { stats: DashboardStats }) {
       {stats.costOverTime.length ? (
         stats.costOverTime.map((series) => (
           <article key={series.currency} className="min-w-0 rounded-xl border bg-white p-4">
-            <h2 className="font-semibold">Estimated cost over time · {series.currency}</h2>
+            <h2 className="font-semibold">
+              {texts.estimatedCostOverTime}
+              {series.currency}
+            </h2>
             <p className="text-sm text-slate-500">
-              Latest estimate costs grouped by creation month (UTC)
+              {texts.latestEstimateCostsGroupedByCreationMonthUTC}
             </p>
             <div className="mt-4 h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -126,11 +135,13 @@ export function DashboardCharts({ stats }: { stats: DashboardStats }) {
               </ResponsiveContainer>
             </div>
             <details className="mt-3 text-sm">
-              <summary>View cost data</summary>
+              <summary>{texts.viewCostData}</summary>
               <ul>
                 {series.points.map((point) => (
                   <li key={point.month}>
-                    {point.month}: {series.currency} {point.totalCost}
+                    {point.month}
+                    {texts.symbol}
+                    {series.currency} {point.totalCost}
                   </li>
                 ))}
               </ul>
@@ -139,8 +150,8 @@ export function DashboardCharts({ stats }: { stats: DashboardStats }) {
         ))
       ) : (
         <article className="rounded-xl border bg-white p-4 lg:col-span-2">
-          <h2 className="font-semibold">Estimated cost over time</h2>
-          <p className="py-8 text-sm text-slate-500">Create an estimate to see costs by month.</p>
+          <h2 className="font-semibold">{texts.estimatedCostOverTime2}</h2>
+          <p className="py-8 text-sm text-slate-500">{texts.createAnEstimateToSeeCostsByMonth}</p>
         </article>
       )}
     </section>

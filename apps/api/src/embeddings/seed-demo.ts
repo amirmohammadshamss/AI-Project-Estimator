@@ -1,3 +1,4 @@
+import { messages } from '../content/embeddings-seed-demo';
 import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
@@ -14,7 +15,7 @@ export async function seedDemo(
   z.string().email().parse(options.email);
   const user = await prisma.user.findUnique({ where: { email: options.email } });
   if (!user && (!options.password || options.password.length < 12))
-    throw new Error('Set DEMO_PASSWORD to at least 12 characters for a new demo account.');
+    throw new Error(messages.setDEMOPASSWORDToAtLeast12);
   const userId = user?.id ?? (await users.create(options.email, options.password!, 'Demo User')).id;
   let created = 0;
   for (const data of DEMO_PROJECTS) {

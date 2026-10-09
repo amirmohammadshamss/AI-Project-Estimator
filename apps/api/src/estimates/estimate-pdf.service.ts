@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import PDFDocument from 'pdfkit';
-import { Prisma } from '@prisma/client';
 import { EstimateRisk } from '@ape/types';
-export type ReportEstimate = Prisma.EstimateGetPayload<{
-  include: { items: true; project: { include: { user: { select: { name: true; email: true } } } } };
-}>;
+import type { ReportEstimate } from './report-types';
+export type { ReportEstimate } from './report-types';
+
 @Injectable()
 export class EstimatePdfService {
   render(estimate: ReportEstimate, risks: EstimateRisk[]): Promise<Buffer> {

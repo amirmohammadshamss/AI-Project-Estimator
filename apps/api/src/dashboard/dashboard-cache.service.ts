@@ -3,7 +3,8 @@ import { createHash } from 'crypto';
 import Redis from 'ioredis';
 import { DashboardStats, DashboardStatsSchema } from '@ape/types';
 import { REDIS_CLIENT } from '../redis/redis.module';
-export const DASHBOARD_CACHE_TTL = 60;
+import { DASHBOARD_CACHE_TTL } from './dashboard.constants';
+export { DASHBOARD_CACHE_TTL } from './dashboard.constants';
 @Injectable()
 export class DashboardCacheService {
   private readonly logger = new Logger(DashboardCacheService.name);

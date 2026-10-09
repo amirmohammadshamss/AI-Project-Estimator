@@ -1,3 +1,4 @@
+import { messages } from '../content/projects-projects.service';
 import { DashboardCacheService } from '../dashboard/dashboard-cache.service';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Project } from '@prisma/client';
@@ -46,7 +47,7 @@ export class ProjectsService {
     });
 
     if (!project) {
-      throw new NotFoundException('Project not found.');
+      throw new NotFoundException(messages.projectNotFound);
     }
 
     return project;

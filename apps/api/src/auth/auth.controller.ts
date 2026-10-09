@@ -1,3 +1,5 @@
+import { messages } from '../content/auth-auth.controller';
+import { runtimeEnvironment } from '../config/runtime-environment';
 import {
   Body,
   Controller,
@@ -27,10 +29,6 @@ import {
 import { UsersService } from '../users/users.service';
 import { UpdateProfileDto } from '../users/dto/update-profile.dto';
 
-const secureCookies = () =>
-  process.env.COOKIE_SECURE === 'true' ||
-  (process.env.COOKIE_SECURE !== 'false' && process.env.NODE_ENV === 'production');
-
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
@@ -42,14 +40,14 @@ export class AuthController {
   private setAuthCookies(res: Response, tokens: AuthTokens): void {
     res.cookie(ACCESS_TOKEN_COOKIE, tokens.accessToken, {
       httpOnly: true,
-      secure: secureCookies(),
+      secure: runtimeEnvironment().secureCookies,
       sameSite: 'lax',
       maxAge: ACCESS_TOKEN_TTL_SECONDS * 1000,
       path: '/',
     });
     res.cookie(REFRESH_TOKEN_COOKIE, tokens.refreshToken, {
       httpOnly: true,
-      secure: secureCookies(),
+      secure: runtimeEnvironment().secureCookies,
       sameSite: 'lax',
       maxAge: REFRESH_TOKEN_TTL_SECONDS * 1000,
       path: '/',
@@ -60,13 +58,13 @@ export class AuthController {
     res.clearCookie(ACCESS_TOKEN_COOKIE, {
       path: '/',
       httpOnly: true,
-      secure: secureCookies(),
+      secure: runtimeEnvironment().secureCookies,
       sameSite: 'lax',
     });
     res.clearCookie(REFRESH_TOKEN_COOKIE, {
       path: '/',
       httpOnly: true,
-      secure: secureCookies(),
+      secure: runtimeEnvironment().secureCookies,
       sameSite: 'lax',
     });
   }
@@ -99,7 +97,7 @@ export class AuthController {
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE];
     if (!refreshToken) {
-      throw new UnauthorizedException('Missing refresh token.');
+      throw new UnauthorizedException(messages.missingRefreshToken);
     }
 
     try {
@@ -118,7 +116,7 @@ export class AuthController {
   async me(@CurrentUser() user: RequestUser) {
     const fullUser = await this.usersService.findById(user.userId);
     if (!fullUser) {
-      throw new UnauthorizedException('User no longer exists.');
+      throw new UnauthorizedException(messages.userNoLongerExists);
     }
     return fullUser;
   }

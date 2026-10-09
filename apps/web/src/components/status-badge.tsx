@@ -1,18 +1,10 @@
-import type { ProjectStatus } from '../hooks/use-projects';
+import type { StatusBadgeProps } from '../types/status-badge-props';
+import {
+  PROJECT_STATUS_STYLES as STYLES,
+  PROJECT_STATUS_LABELS as LABELS,
+} from '../constants/project-status';
 
-const STYLES: Record<ProjectStatus, string> = {
-  DRAFT: 'bg-slate-100 text-slate-700',
-  ESTIMATED: 'bg-emerald-100 text-emerald-700',
-  ARCHIVED: 'bg-amber-100 text-amber-700',
-};
-
-const LABELS: Record<ProjectStatus, string> = {
-  DRAFT: 'Draft',
-  ESTIMATED: 'Estimated',
-  ARCHIVED: 'Archived',
-};
-
-export function StatusBadge({ status }: { status: ProjectStatus }) {
+export function StatusBadge({ status }: StatusBadgeProps) {
   return (
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STYLES[status]}`}

@@ -1,4 +1,5 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+import { texts } from '../content/api-client';
+import { publicEnvironment } from '../config/environment';
 
 export class ApiError extends Error {
   constructor(
@@ -13,7 +14,7 @@ export class ApiError extends Error {
 let refreshRequest: Promise<boolean> | undefined;
 async function refreshSession(): Promise<boolean> {
   if (!refreshRequest) {
-    refreshRequest = fetch(`${API_URL}/auth/refresh`, {
+    refreshRequest = fetch(`${publicEnvironment.apiUrl}/auth/refresh`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -27,7 +28,7 @@ async function refreshSession(): Promise<boolean> {
   return refreshRequest;
 }
 async function fetchResponse(path: string, init?: RequestInit, retried = false): Promise<Response> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(`${publicEnvironment.apiUrl}${path}`, {
     ...init,
     credentials: 'include',
     headers: {
@@ -41,7 +42,7 @@ async function fetchResponse(path: string, init?: RequestInit, retried = false):
     return fetchResponse(path, init, true);
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new ApiError(body.message ?? 'Request failed', res.status, body.code);
+    throw new ApiError(body.message ?? texts.requestFailed, res.status, body.code);
   }
 
   return res;
@@ -60,7 +61,7 @@ export const apiClient = {
   postPdf: async (path: string): Promise<Blob> => {
     const res = await fetchResponse(path, { method: 'POST' });
     if (!res.headers.get('content-type')?.includes('application/pdf'))
-      throw new ApiError('Export did not return a PDF. Please try again.', 502);
+      throw new ApiError(texts.exportDidNotReturnAPdfPleaseTryAgain, 502);
     return res.blob();
   },
   get: <T>(path: string) => request<T>(path, { method: 'GET' }),

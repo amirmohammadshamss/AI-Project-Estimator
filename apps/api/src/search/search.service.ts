@@ -1,3 +1,4 @@
+import { messages } from '../content/search-search.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { createHash } from 'crypto';
 import Redis from 'ioredis';
@@ -5,19 +6,12 @@ import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service';
 import { REDIS_CLIENT } from '../redis/redis.module';
 import { EmbeddingsService, vectorLiteral } from '../embeddings/embeddings.service';
-const featureSchema = z
-  .object({
-    id: z.string(),
-    name: z.string().min(1),
-    description: z.string().min(1),
-    category: z.string(),
-    typicalHours: z.number().positive(),
-    complexity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'VERY_HIGH']),
-    similarity: z.number().finite().min(-1.000001).max(1.000001),
-  })
-  .strict();
-export type SimilarFeature = z.infer<typeof featureSchema>;
-export const SEARCH_CACHE_TTL = 300;
+import { featureSchema } from './search-schema';
+import type { SimilarFeature } from './search-types';
+import { SEARCH_CACHE_TTL } from './search.constants';
+export { featureSchema } from './search-schema';
+export type { SimilarFeature } from './search-types';
+export { SEARCH_CACHE_TTL } from './search.constants';
 @Injectable()
 export class SearchService {
   private readonly logger = new Logger(SearchService.name);
@@ -28,7 +22,7 @@ export class SearchService {
   ) {}
   async findSimilarFeatures(embedding: number[], k = 5): Promise<SimilarFeature[]> {
     if (!Number.isInteger(k) || k < 1 || k > 20)
-      throw new Error('Search result count must be between 1 and 20.');
+      throw new Error(messages.searchResultCountMustBeBetween1);
     const vector = vectorLiteral(embedding);
     // Parameter binding protects both the vector literal and model name.
     const rows = await this.prisma.$queryRaw<SimilarFeature[]>`
@@ -42,8 +36,8 @@ export class SearchService {
   }
   async retrieve(description: string, k = 5): Promise<SimilarFeature[]> {
     const normalized = description.normalize('NFKC').trim().replace(/\s+/g, ' ');
-    if (!normalized || normalized.length > 5000) throw new Error('Invalid search description.');
-    if (!Number.isInteger(k) || k < 1 || k > 20) throw new Error('Invalid result count.');
+    if (!normalized || normalized.length > 5000) throw new Error(messages.invalidSearchDescription);
+    if (!Number.isInteger(k) || k < 1 || k > 20) throw new Error(messages.invalidResultCount);
     const hash = createHash('sha256')
       .update(JSON.stringify([this.embeddings.model, k, normalized]))
       .digest('hex');

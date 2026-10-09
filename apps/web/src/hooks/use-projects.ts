@@ -3,30 +3,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../lib/api-client';
 
-export type ProjectStatus = 'DRAFT' | 'ESTIMATED' | 'ARCHIVED';
+import type { Project, ActivityLogEntry } from '../types/projects';
+export type { Project, ProjectStatus, ActivityLogEntry } from '../types/projects';
 
-export interface Project {
-  id: string;
-  userId: string;
-  name: string;
-  description: string;
-  status: ProjectStatus;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ActivityLogEntry {
-  id: string;
-  userId: string;
-  projectId: string;
-  action: string;
-  metadata: Record<string, unknown> | null;
-  createdAt: string;
-}
-
-const PROJECTS_KEY = ['projects'];
-const projectKey = (id: string) => ['projects', id];
-const projectActivityKey = (id: string) => ['projects', id, 'activity'];
+import { PROJECTS_KEY, projectKey, projectActivityKey } from '../constants/query-keys';
 
 export function useProjects() {
   return useQuery({

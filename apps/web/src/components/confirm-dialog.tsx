@@ -1,20 +1,12 @@
 'use client';
+import { texts } from '../content/confirm-dialog';
 
-interface ConfirmDialogProps {
-  open: boolean;
-  title: string;
-  description: string;
-  confirmLabel?: string;
-  isConfirming?: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-}
-
+import type { ConfirmDialogProps } from '../types/confirm-dialog-props';
 export function ConfirmDialog({
   open,
   title,
   description,
-  confirmLabel = 'Confirm',
+  confirmLabel = texts.confirm,
   isConfirming = false,
   onConfirm,
   onCancel,
@@ -41,7 +33,7 @@ export function ConfirmDialog({
             onClick={onCancel}
             className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100"
           >
-            Cancel
+            {texts.cancel}
           </button>
           <button
             type="button"
@@ -49,7 +41,7 @@ export function ConfirmDialog({
             disabled={isConfirming}
             className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
           >
-            {isConfirming ? 'Working…' : confirmLabel}
+            {isConfirming ? texts.working : confirmLabel}
           </button>
         </div>
       </div>

@@ -1,3 +1,5 @@
+import { messages } from '../content/auth-auth.service';
+import { runtimeEnvironment } from '../config/runtime-environment';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { createHash, randomUUID } from 'crypto';
@@ -11,10 +13,8 @@ import {
 } from './auth.constants';
 import { AccessTokenPayload } from './types';
 
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-}
+import type { AuthTokens } from './token-types';
+export type { AuthTokens } from './token-types';
 
 @Injectable()
 export class AuthService {
@@ -32,14 +32,14 @@ export class AuthService {
     const payload: AccessTokenPayload = { sub: user.id, email: user.email };
 
     const accessToken = await this.jwtService.signAsync(payload, {
-      secret: process.env.JWT_SECRET,
+      secret: runtimeEnvironment().jwtSecret,
       expiresIn: ACCESS_TOKEN_TTL_SECONDS,
     });
 
     const refreshToken = await this.jwtService.signAsync(
       { ...payload, jti: randomUUID() },
       {
-        secret: process.env.JWT_REFRESH_SECRET,
+        secret: runtimeEnvironment().jwtRefreshSecret,
         expiresIn: REFRESH_TOKEN_TTL_SECONDS,
       },
     );
@@ -60,7 +60,7 @@ export class AuthService {
         this.hashToken(refreshToken),
         REFRESH_TOKEN_TTL_SECONDS,
       );
-      if (rotated !== 1) throw new UnauthorizedException('Refresh token has been revoked.');
+      if (rotated !== 1) throw new UnauthorizedException(messages.refreshTokenHasBeenRevoked);
     }
 
     return { accessToken, refreshToken };
@@ -74,12 +74,12 @@ export class AuthService {
   async login(email: string, password: string): Promise<AuthTokens> {
     const user = await this.usersService.findByEmail(email);
     if (!user) {
-      throw new UnauthorizedException('Invalid email or password.');
+      throw new UnauthorizedException(messages.invalidEmailOrPassword);
     }
 
     const passwordMatches = await this.usersService.verifyPassword(password, user.passwordHash);
     if (!passwordMatches) {
-      throw new UnauthorizedException('Invalid email or password.');
+      throw new UnauthorizedException(messages.invalidEmailOrPassword);
     }
 
     return this.issueTokens({
@@ -100,15 +100,15 @@ export class AuthService {
     let payload: AccessTokenPayload;
     try {
       payload = await this.jwtService.verifyAsync<AccessTokenPayload>(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET,
+        secret: runtimeEnvironment().jwtRefreshSecret,
       });
     } catch {
-      throw new UnauthorizedException('Invalid or expired refresh token.');
+      throw new UnauthorizedException(messages.invalidOrExpiredRefreshToken);
     }
 
     const user = await this.usersService.findById(payload.sub);
     if (!user) {
-      throw new UnauthorizedException('User no longer exists.');
+      throw new UnauthorizedException(messages.userNoLongerExists);
     }
 
     return this.issueTokens(user, this.hashToken(refreshToken));

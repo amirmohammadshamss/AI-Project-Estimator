@@ -1,3 +1,4 @@
+import { aiDefaults, aiEnvironment } from '../config/ai-environment';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
@@ -11,23 +12,25 @@ export class OpenAiProvider implements AiProvider {
   constructor(private readonly config: ConfigService) {}
   private getClient() {
     if (!this.client) {
-      const apiKey = this.config.get<string>('OPENAI_API_KEY');
+      const { apiKey, timeoutMs: timeout, baseUrl: baseURL } = aiEnvironment(this.config);
       if (!apiKey?.trim()) throw new AiProviderError('not_configured');
-      const timeout = Number(this.config.get<string>('OPENAI_TIMEOUT_MS') ?? 60000);
-      if (!Number.isFinite(timeout) || timeout < 1000 || timeout > 120000)
+      if (
+        !Number.isFinite(timeout) ||
+        timeout < aiDefaults.minTimeoutMs ||
+        timeout > aiDefaults.maxTimeoutMs
+      )
         throw new AiProviderError('invalid_configuration');
-      const baseURL = this.config.get<string>('OPENAI_BASE_URL');
       this.client = new OpenAI({ apiKey, timeout, maxRetries: 0, ...(baseURL ? { baseURL } : {}) });
     }
     return this.client;
   }
   async generateStructured(request: StructuredRequest): Promise<unknown> {
     const response = await this.getClient().responses.create({
-      model: this.config.get<string>('OPENAI_MODEL') ?? 'gpt-4o-mini',
+      model: aiEnvironment(this.config).model,
       instructions: request.instructions,
       input: request.input,
       text: { format: zodTextFormat(request.schema, request.name) },
-      max_output_tokens: 8192,
+      max_output_tokens: aiDefaults.maxOutputTokens,
       store: false,
     });
     if (response.status !== 'completed') throw new AiProviderError('incomplete');
@@ -41,7 +44,7 @@ export class OpenAiProvider implements AiProvider {
   }
   async generateEmbedding(text: string): Promise<unknown> {
     const response = await this.getClient().embeddings.create({
-      model: this.config.get<string>('OPENAI_EMBEDDING_MODEL') ?? 'text-embedding-3-small',
+      model: aiEnvironment(this.config).embeddingModel,
       input: text,
       dimensions: 1536,
     });

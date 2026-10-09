@@ -1,3 +1,4 @@
+import { messages } from '../content/estimates-estimate-reports.service';
 import {
   Injectable,
   InternalServerErrorException,
@@ -31,7 +32,7 @@ export class EstimateReportsService {
         project: { include: { user: { select: { name: true, email: true } } } },
       },
     });
-    if (!estimate) throw new NotFoundException('Estimate not found.');
+    if (!estimate) throw new NotFoundException(messages.estimateNotFound);
     return estimate;
   }
   async explain(userId: string, id: string) {
@@ -53,7 +54,7 @@ export class EstimateReportsService {
       return EstimateExplanationSchema.parse({ explanation: await this.ai.explainEstimate(input) });
     } catch {
       this.logger.warn('Estimate explanation failed.');
-      throw new AiGenerationError('Could not explain this estimate. Please try again later.');
+      throw new AiGenerationError(messages.couldNotExplainThisEstimatePleaseTry);
     }
   }
   async risks(userId: string, id: string) {
@@ -64,7 +65,7 @@ export class EstimateReportsService {
       });
     } catch {
       this.logger.warn('Risk analysis failed.');
-      throw new AiGenerationError('Could not analyze risks. Please try again later.');
+      throw new AiGenerationError(messages.couldNotAnalyzeRisksPleaseTryAgain);
     }
   }
   async export(userId: string, id: string) {
@@ -76,7 +77,7 @@ export class EstimateReportsService {
       this.logger.warn('Estimate PDF rendering failed.');
       throw new InternalServerErrorException({
         code: 'PDF_EXPORT_FAILED',
-        message: 'Could not export this estimate. Please try again.',
+        message: messages.couldNotExportThisEstimatePleaseTry,
       });
     }
     // Recheck ownership before logging after potentially lengthy rendering.
@@ -84,7 +85,7 @@ export class EstimateReportsService {
       if (
         !(await tx.estimate.findFirst({ where: { id, project: { userId } }, select: { id: true } }))
       )
-        throw new NotFoundException('Estimate not found.');
+        throw new NotFoundException(messages.estimateNotFound);
       await tx.activityLog.create({
         data: {
           userId,

@@ -1,19 +1,15 @@
 'use client';
+import { texts } from '../../content/login-page';
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { useLogin } from '../../hooks/use-auth';
 import { ApiError } from '../../lib/api-client';
 
-const loginSchema = z.object({
-  email: z.string().email('Enter a valid email address.'),
-  password: z.string().min(1, 'Password is required.'),
-});
-
-type LoginForm = z.infer<typeof loginSchema>;
+import { loginSchema } from '../../schemas/login';
+import type { LoginForm } from '../../types/login';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -33,11 +29,11 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center p-6">
       <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="mb-6 text-2xl font-semibold">Log in</h1>
+        <h1 className="mb-6 text-2xl font-semibold">{texts.logIn}</h1>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <label htmlFor="email" className="mb-1 block text-sm font-medium text-slate-700">
-              Email
+              {texts.email}
             </label>
             <input
               id="email"
@@ -50,7 +46,7 @@ export default function LoginPage() {
           </div>
           <div>
             <label htmlFor="password" className="mb-1 block text-sm font-medium text-slate-700">
-              Password
+              {texts.password}
             </label>
             <input
               id="password"
@@ -65,7 +61,7 @@ export default function LoginPage() {
           </div>
           {login.isError && (
             <p className="text-sm text-red-600">
-              {login.error instanceof ApiError ? login.error.message : 'Login failed.'}
+              {login.error instanceof ApiError ? login.error.message : texts.loginFailed}
             </p>
           )}
           <button
@@ -73,13 +69,13 @@ export default function LoginPage() {
             disabled={login.isPending}
             className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
           >
-            {login.isPending ? 'Logging in…' : 'Log in'}
+            {login.isPending ? texts.loggingIn : texts.logIn}
           </button>
         </form>
         <p className="mt-4 text-sm text-slate-600">
-          No account?{' '}
+          {texts.noAccount}{' '}
           <Link href="/register" className="font-medium text-slate-900 underline">
-            Register
+            {texts.register}
           </Link>
         </p>
       </div>

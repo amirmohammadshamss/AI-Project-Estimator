@@ -1,3 +1,4 @@
+import { runtimeEnvironment } from '../config/runtime-environment';
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';
@@ -15,7 +16,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: extractFromCookie,
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET,
+      secretOrKey: runtimeEnvironment().jwtSecret,
     });
   }
 

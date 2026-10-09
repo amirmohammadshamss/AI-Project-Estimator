@@ -1,3 +1,4 @@
+import { serverConstants } from './config/server.constants';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -25,7 +26,7 @@ import { ActivityModule } from './activity/activity.module';
       validate: validateEnvironment,
     }),
     ThrottlerModule.forRoot({
-      throttlers: [{ ttl: 60_000, limit: 100 }],
+      throttlers: [{ ttl: serverConstants.throttleTtlMs, limit: serverConstants.throttleLimit }],
     }),
     PrismaModule,
     RedisModule,

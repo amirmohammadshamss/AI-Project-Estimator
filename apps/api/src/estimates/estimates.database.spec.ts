@@ -9,18 +9,10 @@ import { CostCalculationService } from './cost-calculation.service';
 // Opt-in migrated database; creates and cleans up only this suite's unique user.
 const databaseSuite = process.env.SQL_TEST_DATABASE_URL ? describe : describe.skip;
 databaseSuite('PostgreSQL estimate transactions', () => {
-  const prisma = new PrismaService({
-    datasources: { db: { url: process.env.SQL_TEST_DATABASE_URL } },
-  });
+  let prisma: PrismaService;
+  let service: EstimatesService;
   const userId = randomUUID();
   let projectId: string;
-  const service = new EstimatesService(
-    prisma,
-    new CostCalculationService(),
-    {} as AiService,
-    {} as SearchService,
-    { invalidate: jest.fn().mockResolvedValue(undefined) } as unknown as DashboardCacheService,
-  );
   const dto = {
     summary: 'SQL acceptance fixture',
     hourlyRate: 12.34,
@@ -37,6 +29,17 @@ databaseSuite('PostgreSQL estimate transactions', () => {
     ],
   };
   beforeAll(async () => {
+    prisma = new PrismaService({
+      datasources: { db: { url: process.env.SQL_TEST_DATABASE_URL } },
+    });
+    service = new EstimatesService(
+      prisma,
+      new CostCalculationService(),
+      {} as AiService,
+      {} as SearchService,
+      { invalidate: jest.fn().mockResolvedValue(undefined) } as unknown as DashboardCacheService,
+    );
+
     await prisma.user.create({
       data: { id: userId, email: `${userId}@example.invalid`, passwordHash: 'test-only-unused' },
     });

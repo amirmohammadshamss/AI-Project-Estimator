@@ -1,5 +1,5 @@
 import { z } from 'zod';
-export const AI_PROVIDER = Symbol('AI_PROVIDER');
+export { AI_PROVIDER } from './ai.constants';
 export interface StructuredRequest {
   name: string;
   schema: z.ZodTypeAny;

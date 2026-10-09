@@ -1,6 +1,11 @@
 import { BadRequestException, Logger } from '@nestjs/common';
 import { AiService } from './ai.service';
-import { AiGenerationError, AiValidationError } from './ai.errors';
+import {
+  AiGenerationError,
+  AiNotConfiguredError,
+  AiProviderError,
+  AiValidationError,
+} from './ai.errors';
 
 export const validEstimate = {
   summary: 'Build a portal',
@@ -26,6 +31,12 @@ describe('AiService', () => {
     jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
   });
   afterEach(() => jest.restoreAllMocks());
+  it('returns an actionable configuration error for generation and embedding', async () => {
+    provider.generateStructured.mockRejectedValue(new AiProviderError('not_configured'));
+    provider.generateEmbedding.mockRejectedValue(new AiProviderError('not_configured'));
+    await expect(service.generateEstimate('Build a portal')).rejects.toThrow(AiNotConfiguredError);
+    await expect(service.generateEmbedding('Build a portal')).rejects.toThrow(AiNotConfiguredError);
+  });
   it('parses valid structured JSON and forwards description and RAG context', async () => {
     provider.generateStructured.mockResolvedValue(JSON.stringify(validEstimate));
     expect(await service.generateEstimate('Build a portal', ['Authentication'])).toEqual(
