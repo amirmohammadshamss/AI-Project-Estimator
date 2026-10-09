@@ -18,6 +18,35 @@ Guiding constraints carried through every phase (see doc.md §39, §42):
 
 ## Progress — 2026-10-09
 
+- Acceptance follow-up: added an opt-in SQL transaction test, verified against
+  isolated PostgreSQL 16. Four concurrent creates allocate versions 1–4; two
+  competing edits accept exactly one new version. Original hours and project
+  snapshots remain immutable; denied ownership/archive writes leave estimate
+  and activity counts unchanged. Test records are scoped to a unique user and
+  removed after the test. Lint and type checking pass.
+  The non-vector migrations apply successfully to the isolated database;
+  pgvector and the full migration chain remain unverified locally.
+- CI now enables the SQL test and starts the built Compose stack, waiting for
+  health and checking API/web HTTP responses, with failure logs and shutdown.
+  It stops the earlier CI database services first to avoid host-port conflicts.
+  The workflow is authored but has not yet been observed remotely.
+- Phase 10: added validated environment setup, offline/manual and AI demo seeds,
+  cookie-auth OpenAPI schemas, CI with PostgreSQL/pgvector and Redis services,
+  migration-aware Compose startup, corrected container build inputs, and expanded
+  README setup/deployment/architecture documentation. Activated the global
+  throttler and added Helmet, request limits, secure-cookie configuration and
+  Redis shutdown cleanup. CI also seeds twice to exercise repeatable startup data.
+- Phase 10 verification: 130 default unit/component tests pass (two optional
+  database/Redis tests skipped); the optional real Redis Lua rotation/replay test
+  passes separately. All 11 browser tests pass, including Swagger rendering,
+  cookie-auth schemas, security headers, body limits and active throttling.
+  Lint, type checking and production builds pass. Credential-pattern/current-secret scans find no
+  matches in available git history, working tree or browser assets.
+- Phase 10 remaining: Docker is not installed locally; Compose builds/startup,
+  real pgvector and full migrations, live OpenAI seed/generation,
+  remote CI green status and the full manual §40 walkthrough remain unverified.
+  Existing incremental commit history was inspected and preserved; no rewrite
+  was necessary or performed. These pending checks prevent final acceptance.
 - Phases 1–2: existing setup and authentication implementation.
 - Phase 3: project CRUD/archive, activity feed, forms, and ownership unit tests
   are implemented. Full browser/database acceptance remains to be verified.
@@ -382,12 +411,12 @@ done," independent of which phase it landed in:
 - [ ] Risk detection + explanation + stack recommendations from real AI output
 - [x] PDF export contains all required fields
 - [ ] Redis used only for stats cache / search cache / rate limiting — no filler usage
-- [ ] Background-job abstraction exists or is cleanly deferrable (§25)
+- [x] Background-job abstraction exists or is cleanly deferrable (§25)
 - [x] Jest (unit+integration) + Playwright E2E, AI mocked, no API key needed in CI
 - [ ] Docker Compose brings up web/api/postgres/redis
-- [ ] `.env.example` complete, no secrets committed
+- [x] `.env.example` complete, no secrets committed (scoped credential scan passes)
 - [ ] GitHub Actions CI pipeline fails on lint/typecheck/test/build failure
-- [ ] Swagger docs at `/api/docs`
-- [ ] README complete per §34
-- [ ] Meaningful, incremental commit history
+- [x] Swagger docs at `/api/docs`
+- [x] README complete per §34
+- [x] Meaningful, incremental commit history
 - [ ] Full §40 15-step acceptance walkthrough passes manually

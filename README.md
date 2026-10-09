@@ -6,13 +6,15 @@ See [PLAN.md](PLAN.md) for implementation progress and pending acceptance checks
 
 ## Development
 
-Use Node 20+ and pnpm 9.15.0. Run `pnpm install`, copy `.env.example` to `.env`,
-set JWT secrets, and start PostgreSQL and Redis. Export the environment variables
-in the shell used to run the API (Prisma commands also need `DATABASE_URL`).
+Use Node 20+ and pnpm 9.15.0. Install dependencies and create a local environment
+with distinct random JWT secrets. `setup:env` preserves an existing `.env`.
+Docker Compose provides PostgreSQL with pgvector and Redis for local development.
 
 ```sh
-pnpm --filter @ape/api prisma:generate
-pnpm --filter @ape/api exec prisma migrate deploy
+pnpm install --frozen-lockfile
+pnpm setup:env
+docker compose up -d postgres redis
+pnpm db:migrate
 pnpm dev:api
 # In another terminal:
 pnpm dev:web
@@ -20,6 +22,45 @@ pnpm dev:web
 
 The web app runs at http://localhost:3000, the API at http://localhost:4000,
 and API documentation at http://localhost:4000/api/docs.
+The API loads the root `.env`; database/seed scripts do likewise. The web default
+API URL is localhost:4000; custom URLs must be supplied to `dev:web` as
+`NEXT_PUBLIC_API_URL`.
+
+## Architecture and deployment
+
+```mermaid
+flowchart LR
+  Browser[Next.js browser UI] -->|HTTP and session cookies| API[NestJS API]
+  API --> DB[PostgreSQL and pgvector]
+  API --> Redis[Redis sessions and caches]
+  API --> AI[AiService and OpenAI SDK]
+  API --> PDF[PDFKit reports]
+```
+
+The shared package contains runtime AI schemas and response types. Backend
+transactions enforce ownership and immutable versions; decimal arithmetic computes
+costs independently of AI. Synchronous provider requests have bounded timeouts and
+run outside transactions. AiService keeps a future queue/worker implementation
+separate from controllers; jobs, distributed throttling, vector indexes and
+non-Latin PDF font fallback are future improvements.
+
+For the full container stack, run `pnpm setup:env`, edit `.env` as needed, then
+`docker compose up --build`. The one-shot migration service completes before the
+API starts; the web service waits for API health. Database data uses a named
+volume. Images run as the unprivileged Node user. The browser API URL is baked
+into the web build, so changing `NEXT_PUBLIC_API_URL` requires rebuilding.
+Docker builds and a fresh-clone startup remain to be verified locally.
+
+## Environment
+
+See [.env.example](.env.example) for defaults. Required API settings are
+`DATABASE_URL`, `REDIS_URL`, and distinct `JWT_SECRET`/`JWT_REFRESH_SECRET` values
+of at least 32 characters. Startup validates these fields without printing values.
+`WEB_ORIGIN` controls the allowed credentialed browser origin; `PORT` defaults to 4000. `COOKIE_SECURE=false` supports local HTTP Compose. Use `true` behind HTTPS
+in deployment; production defaults to secure cookies when the setting is absent.
+`NEXT_PUBLIC_API_URL` is public; OpenAI and session secrets belong only on the API.
+`DEMO_EMAIL` defaults to demo@example.com; set `DEMO_PASSWORD` to at least 12
+characters when creating that account. Existing account passwords are preserved.
 
 ## AI generation
 
@@ -69,11 +110,15 @@ PostgreSQL image includes pgvector. The migration enables `vector` and stores
 1536-dimensional feature embeddings. Embedding models must support the
 `dimensions` parameter (the default is `text-embedding-3-small`).
 
-With backend environment variables exported, run `pnpm db:seed` to embed 14 common
-features. This calls OpenAI and requires a key. The seed generates all vectors
+Run `pnpm db:seed` to embed 14 common features and create two demo projects with
+AI-generated estimates. This calls OpenAI and requires a key. The seed generates all vectors
 before atomically upserting feature rows by name/model, so it can be rerun safely.
 Reference hours are illustrative baselines; the AI adapts them to project scope.
-Demo project/estimate seeding remains scheduled for Phase 10.
+For an offline first run, use `pnpm db:seed:demo` instead: it creates the same demo
+projects with clearly labeled illustrative manual estimates and makes no AI calls.
+Both commands require PostgreSQL and Redis. Repeated runs skip demo projects with
+estimates or archived status, preserving user changes. Separate seed operations
+can finish independently; rerun after a provider failure to complete missing data.
 
 Generation now embeds the saved project description, retrieves the five nearest
 features using [pgvector cosine distance](https://github.com/pgvector/pgvector#querying),
@@ -175,3 +220,35 @@ API check/build/dev scripts generate the Prisma client and shared runtime schema
 No `.env` or API key is needed for the default tests. Production uses the standard
 OpenAI endpoint unless optional `OPENAI_BASE_URL` is set; the test server supplies
 its own loopback endpoint without adding mock modes to the production application.
+
+## Security and CI
+
+The API uses Helmet headers, 2 MiB request-body limits, strict DTO validation,
+and a global throttle of 100 requests per route/client per minute. Throttling uses
+process-local storage; multi-instance deployment needs a shared throttle store.
+Passwords are hashed, cookies are HTTP-only with SameSite=Lax, and authorization
+checks ownership. Redis holds refresh sessions in addition to disposable caches.
+Swagger describes cookie authentication; sign in through the app before using
+authenticated endpoints from the docs in the same browser.
+
+`pnpm security:check` checks all available git history, the working tree and built
+browser assets for OpenAI/AWS/private-key patterns and current configured OpenAI
+and JWT secrets. It reports locations without values; it is a scoped detection
+check rather than a guarantee against every possible credential format.
+
+GitHub Actions installs with the lockfile, lints, checks types, applies migrations,
+seeds offline twice, runs tests against pgvector and Redis, builds both apps,
+checks secrets, runs Chromium acceptance tests, builds Compose images and checks
+container startup plus API/web readiness. No live
+OpenAI key is required. CI has not yet been observed running remotely.
+For the real Redis atomic-rotation test, set `REDIS_TEST_URL` and run
+`pnpm --filter @ape/api test -- --runInBand auth.redis.spec.ts`.
+The remaining full manual walkthrough, live OpenAI generation and Docker/SQL
+acceptance checks are tracked in PLAN.md.
+
+Set `SQL_TEST_DATABASE_URL` to a migrated test database and run
+`pnpm --filter @ape/api test -- --runInBand estimates.database.spec.ts` for real
+PostgreSQL concurrent-version and competing-edit checks. The suite inserts a
+unique test user and removes its records afterward; it does not truncate tables.
+This test passed locally on PostgreSQL 16 with the non-vector migrations applied.
+CI enables all three optional SQL, pgvector and Redis integration suites.

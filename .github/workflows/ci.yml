@@ -23,9 +23,15 @@ jobs:
       REDIS_URL: redis://localhost:6379
       VECTOR_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/estimator_test
       REDIS_TEST_URL: redis://localhost:6379
+      SQL_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/estimator_test
       OPENAI_API_KEY: ''
+      JWT_SECRET: ci-access-secret-for-isolated-test-environment
+      JWT_REFRESH_SECRET: ci-refresh-secret-for-isolated-test-environment
+      DEMO_PASSWORD: ci-demo-password-for-isolated-database
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -35,8 +41,11 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm db:migrate
+      - run: pnpm db:seed:demo
+      - run: pnpm db:seed:demo
       - run: pnpm test
       - run: pnpm build
+      - run: pnpm security:check
       - run: pnpm --filter @ape/web exec playwright install --with-deps chromium
       - run: pnpm e2e
       - uses: actions/upload-artifact@v4
@@ -45,3 +54,16 @@ jobs:
           name: browser-test-results
           path: apps/web/test-results
       - run: docker compose --env-file .env.example build
+      - name: Start and verify Compose stack
+        run: |
+          docker stop ${{ job.services.postgres.id }} ${{ job.services.redis.id }}
+          pnpm setup:env
+          docker compose up -d --wait --wait-timeout 180
+          curl --fail --retry 10 --retry-delay 2 http://localhost:4000/health
+          curl --fail --retry 10 --retry-delay 2 http://localhost:3000/login
+      - name: Compose diagnostics
+        if: failure()
+        run: docker compose logs --no-color --tail 100
+      - name: Stop Compose stack
+        if: always()
+        run: docker compose down

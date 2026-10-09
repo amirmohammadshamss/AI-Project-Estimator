@@ -19,7 +19,8 @@
     "db:seed": "node scripts/env-command.mjs pnpm --filter @ape/api prisma:seed",
     "e2e": "pnpm test:e2e",
     "setup:env": "node scripts/setup-env.mjs",
-    "db:seed:demo": "node scripts/env-command.mjs pnpm --filter @ape/api seed:demo"
+    "db:seed:demo": "node scripts/env-command.mjs pnpm --filter @ape/api seed:demo",
+    "security:check": "node scripts/check-secrets.mjs"
   },
   "devDependencies": {
     "dotenv": "^16.4.5",
